@@ -1,0 +1,688 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#1C1814">
+<title>SULCO — Som & Discos</title>
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Anton&family=Archivo:wght@400;500;600;700;800&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bone:#EFE7D6; --ink:#1C1814; --vermelho:#C8412A; --ocre:#C98A2B;
+    --musgo:#2B4F45; --areia:#E4D8BE;
+    --ink-80:rgba(28,24,20,.80); --ink-55:rgba(28,24,20,.55); --ink-12:rgba(28,24,20,.12);
+    --bone-70:rgba(239,231,214,.70); --bone-45:rgba(239,231,214,.45); --bone-20:rgba(239,231,214,.20);
+    --display:"Anton",Impact,"Arial Narrow",sans-serif;
+    --label:"Space Grotesk",ui-monospace,"DejaVu Sans Mono",monospace;
+    --body:"Archivo","Helvetica Neue",Arial,sans-serif;
+  }
+  *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+  html,body{margin:0;padding:0}
+  body{
+    background:var(--bone); color:var(--ink); font-family:var(--body);
+    font-size:16px; line-height:1.4; -webkit-font-smoothing:antialiased;
+    padding-bottom:env(safe-area-inset-bottom);
+  }
+  button{font-family:inherit; cursor:pointer; border:none; background:none; color:inherit}
+  img{display:block}
+
+  /* ---------- WELCOME (tela do QR) — contraste ink × bone ---------- */
+  #welcome{
+    position:fixed; inset:0; z-index:100; background:var(--bone);
+    display:flex; flex-direction:column; transition:opacity .45s ease, visibility .45s;
+  }
+  #welcome.hide{opacity:0; visibility:hidden}
+  /* campo escuro (topo) — a etiqueta do disco */
+  .w-top{
+    position:relative; background:var(--ink); color:var(--bone);
+    height:43vh; min-height:264px; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; overflow:hidden; padding-top:env(safe-area-inset-top);
+  }
+  .w-top .warcs{position:absolute; width:150%; max-width:580px; aspect-ratio:1; left:50%; top:50%; transform:translate(-50%,-50%); opacity:.16; pointer-events:none}
+  .w-word{position:relative; font-family:var(--display); font-size:62px; line-height:.86; letter-spacing:.02em; color:var(--bone)}
+  .w-kick{position:relative; font-family:var(--label); font-size:12px; font-weight:600; letter-spacing:.34em; color:var(--ocre); text-transform:uppercase; margin-top:10px}
+  /* campo claro (baixo) — a recepção */
+  .w-bot{
+    flex:1; background:var(--bone); color:var(--ink); display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center;
+    padding:32px 30px calc(30px + env(safe-area-inset-bottom));
+  }
+  .w-inner{max-width:420px}
+  .w-rule{width:44px; height:3px; background:var(--ocre); margin:0 auto 22px}
+  .w-hi{font-family:var(--body); font-size:22px; font-weight:700; color:var(--ink); margin-bottom:12px}
+  .w-body{font-family:var(--body); font-size:15px; line-height:1.55; color:var(--ink-80)}
+  .w-help{font-family:var(--body); font-size:14px; line-height:1.5; color:var(--ink-80); margin-top:20px; padding-top:18px; border-top:1px solid var(--ink-12)}
+  .w-help b{color:var(--ocre); font-weight:700}
+  .w-cta{
+    margin-top:28px; display:inline-flex; align-items:center; gap:10px;
+    background:var(--vermelho); color:var(--bone); font-family:var(--label); font-weight:600;
+    font-size:15px; letter-spacing:.04em; padding:16px 30px;
+  }
+  .w-cta:active{background:#b23a25}
+
+  /* ---------- QR SCREEN (demo: toque = escanear) ---------- */
+  #qrscreen{
+    position:fixed; inset:0; z-index:110; background:var(--bone);
+    display:flex; flex-direction:column; overflow-y:auto;
+    transition:opacity .5s ease, visibility .5s;
+  }
+  #qrscreen.hide{opacity:0; visibility:hidden}
+  .qrs-top{
+    position:relative; background:var(--ink); color:var(--bone);
+    padding:36px 24px 30px; padding-top:calc(36px + env(safe-area-inset-top));
+    display:flex; flex-direction:column; align-items:center; justify-content:center; overflow:hidden; min-height:30vh;
+  }
+  .qrs-top .arcs{position:absolute; width:150%; max-width:520px; aspect-ratio:1; left:50%; top:50%; transform:translate(-50%,-50%); opacity:.15; pointer-events:none}
+  .qrs-word{position:relative; font-family:var(--display); font-size:54px; line-height:.86; letter-spacing:.02em; color:var(--bone)}
+  .qrs-kick{position:relative; font-family:var(--label); font-size:11px; font-weight:600; letter-spacing:.32em; color:var(--ocre); text-transform:uppercase; margin-top:10px}
+  .qrs-body{flex:1; background:var(--bone); display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; padding:30px 28px calc(30px + env(safe-area-inset-bottom))}
+  .qrs-label{display:flex; align-items:center; gap:9px; font-family:var(--label); font-size:12px; font-weight:600; letter-spacing:.2em; color:var(--ocre); text-transform:uppercase; margin-bottom:20px}
+  .qr-tap{background:none; border:none; padding:0; cursor:pointer; display:block}
+  .qr-frame{
+    background:#FCFAF4; padding:20px; border:2px solid rgba(28,24,20,.14);
+    width:min(60vw,232px); height:min(60vw,232px); display:flex; align-items:center; justify-content:center;
+    transition:transform .15s ease;
+  }
+  .qr-tap:active .qr-frame{transform:scale(.96)}
+  .qr-frame svg{width:100%; height:100%; display:block}
+  .qrs-hint{font-family:var(--body); font-size:13px; color:var(--vermelho); font-weight:700; margin-top:16px; display:inline-flex; align-items:center; gap:6px}
+  .qrs-title{font-family:var(--body); font-weight:800; font-size:25px; line-height:1.12; color:var(--ink); margin-top:28px; letter-spacing:-.01em}
+  .qrs-sub{font-family:var(--body); font-weight:400; font-size:15px; line-height:1.5; color:var(--ink-80); margin-top:12px; max-width:340px}
+  .qrs-rule{width:44px; height:3px; background:var(--ocre); margin:24px 0 16px}
+  .qrs-url{font-family:var(--label); font-size:15px; font-weight:600; letter-spacing:.03em; color:var(--ink)}
+  .qrs-foot{font-family:var(--body); font-size:12.5px; color:var(--ink-40); margin-top:8px}
+
+  /* ---------- HEADER ---------- */
+  header{
+    background:var(--ink); color:var(--bone); position:sticky; top:0; z-index:40;
+    padding:14px 16px 12px 16px; padding-top:calc(14px + env(safe-area-inset-top)); overflow:hidden;
+  }
+  .arcs{position:absolute; right:-70px; top:-70px; width:200px; height:200px; opacity:.16; pointer-events:none}
+  .brandrow{display:flex; align-items:center; gap:10px; position:relative}
+  .wordmark{font-family:var(--display); font-size:32px; letter-spacing:.02em; line-height:.9; color:var(--bone)}
+  .kicker{font-family:var(--label); font-size:11px; font-weight:600; letter-spacing:.26em; color:var(--ocre); text-transform:uppercase; align-self:flex-end; padding-bottom:5px}
+  .cartbtn{margin-left:auto; position:relative; color:var(--bone); padding:6px; display:flex}
+  .cartbtn .cbadge{
+    position:absolute; top:-3px; right:-4px; min-width:18px; height:18px; padding:0 4px;
+    background:var(--vermelho); color:var(--bone); border-radius:9px; font-family:var(--label);
+    font-size:11px; font-weight:700; display:none; align-items:center; justify-content:center; line-height:1;
+  }
+  .cartbtn.has .cbadge{display:flex}
+  .searchwrap{position:relative; margin-top:12px}
+  .searchwrap input{
+    width:100%; background:rgba(239,231,214,.07); border:1px solid var(--bone-45); color:var(--bone);
+    font-family:var(--body); font-size:15px; padding:12px 40px 12px 40px; outline:none;
+  }
+  .searchwrap input::placeholder{color:var(--bone-45)}
+  .searchwrap input:focus{border-color:var(--ocre)}
+  .searchwrap .mag{position:absolute; left:13px; top:50%; transform:translateY(-50%); color:var(--bone-45); pointer-events:none}
+  .searchwrap .clr{position:absolute; right:8px; top:50%; transform:translateY(-50%); color:var(--bone-70); padding:6px; display:none; font-size:18px; line-height:1}
+  .searchwrap.has .clr{display:block}
+
+  /* ---------- FILTER BAR ---------- */
+  .filterbar{position:sticky; top:0; z-index:30; background:var(--bone); border-bottom:1px solid var(--ink-12)}
+  .chips{display:flex; gap:8px; overflow-x:auto; padding:10px 16px; scrollbar-width:none}
+  .chips::-webkit-scrollbar{display:none}
+  .chip{
+    flex:0 0 auto; font-family:var(--label); font-size:12.5px; font-weight:600; letter-spacing:.02em;
+    padding:7px 13px; border:1px solid var(--ink-12); background:transparent; color:var(--ink-80);
+    white-space:nowrap; transition:background .12s,color .12s,border-color .12s;
+  }
+  .chip[aria-pressed="true"]{background:var(--ink); color:var(--bone); border-color:var(--ink)}
+  .metarow{display:flex; align-items:center; justify-content:space-between; padding:2px 16px 10px 16px; gap:12px}
+  .count{font-family:var(--label); font-size:12px; letter-spacing:.06em; color:var(--ink-55); text-transform:uppercase}
+  .morebtn{font-family:var(--label); font-size:12px; font-weight:600; letter-spacing:.04em; color:var(--ink); display:flex; align-items:center; gap:6px; padding:4px 2px}
+  .morebtn .dot{width:6px; height:6px; border-radius:50%; background:var(--vermelho); display:none}
+  .morebtn.active .dot{display:block}
+
+  /* ---------- COVER (disco / capa) ---------- */
+  .cover{flex:0 0 auto; background:var(--ink); overflow:hidden; position:relative}
+  .cover svg,.cover img{width:100%; height:100%; display:block}
+  .cover img{object-fit:cover}
+
+  /* ---------- LIST ---------- */
+  main{padding:4px 0 40px 0}
+  .disc{
+    display:flex; gap:14px; align-items:center; padding:12px 16px;
+    border-bottom:1px solid var(--ink-12); width:100%; text-align:left; animation:fade .35s ease both;
+  }
+  @keyframes fade{from{opacity:0; transform:translateY(4px)} to{opacity:1; transform:none}}
+  .disc:active{background:var(--areia)}
+  .disc .cover{width:62px; height:62px}
+  .disc .info{flex:1 1 auto; min-width:0}
+  .disc .artist{font-family:var(--body); font-weight:700; font-size:15px; line-height:1.2; color:var(--ink); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .disc .title{font-family:var(--body); font-weight:400; font-size:14px; line-height:1.25; color:var(--ink-80); margin-top:1px; overflow:hidden; text-overflow:ellipsis; display:-webkit-box; -webkit-line-clamp:1; -webkit-box-orient:vertical}
+  .disc .sub{font-family:var(--label); font-size:11px; letter-spacing:.03em; color:var(--ink-55); margin-top:4px; text-transform:uppercase; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .disc .right{flex:0 0 auto; display:flex; flex-direction:column; align-items:flex-end; gap:5px}
+  .price{font-family:var(--label); font-weight:700; font-size:14px; color:var(--ink); white-space:nowrap}
+  .status{font-family:var(--label); font-size:9.5px; font-weight:600; letter-spacing:.08em; text-transform:uppercase; padding:2px 6px; white-space:nowrap}
+  .st-loja{background:var(--musgo); color:var(--bone)}
+  .st-vendido{background:var(--ink-12); color:var(--ink-55)}
+  .st-consignado{background:var(--ocre); color:var(--ink)}
+  .incart-tag{font-family:var(--label); font-size:9px; font-weight:700; letter-spacing:.06em; color:var(--vermelho); text-transform:uppercase; display:flex; align-items:center; gap:3px}
+
+  .empty{padding:64px 32px; text-align:center; color:var(--ink-55)}
+  .empty .big{font-family:var(--display); font-size:22px; color:var(--ink-80); margin-bottom:8px}
+  .empty button{margin-top:16px; font-family:var(--label); font-weight:600; font-size:13px; letter-spacing:.04em; color:var(--vermelho); text-decoration:underline; text-underline-offset:3px}
+
+  /* ---------- SHEETS ---------- */
+  .scrim{position:fixed; inset:0; background:rgba(28,24,20,.55); z-index:50; opacity:0; pointer-events:none; transition:opacity .2s}
+  .scrim.open{opacity:1; pointer-events:auto}
+  .sheet{
+    position:fixed; left:0; right:0; bottom:0; z-index:60; background:var(--bone);
+    transform:translateY(100%); transition:transform .26s cubic-bezier(.2,.8,.2,1);
+    max-height:92vh; overflow-y:auto; padding-bottom:calc(20px + env(safe-area-inset-bottom));
+  }
+  .sheet.open{transform:none}
+  .sheet .grab{width:38px; height:4px; background:var(--ink-12); border-radius:2px; margin:10px auto 4px}
+  .sheet-head{display:flex; align-items:center; justify-content:space-between; padding:8px 18px 4px}
+  .sheet-head h2{font-family:var(--display); font-size:20px; margin:0; letter-spacing:.02em}
+  .sheet-head .x{font-size:26px; line-height:1; color:var(--ink-55); padding:6px}
+
+  .fgroup{padding:14px 18px 4px}
+  .fgroup h3{font-family:var(--label); font-size:11px; font-weight:600; letter-spacing:.16em; text-transform:uppercase; color:var(--ink-55); margin:0 0 10px}
+  .fchips{display:flex; flex-wrap:wrap; gap:8px}
+  .fchip{font-family:var(--label); font-size:12.5px; font-weight:600; padding:8px 13px; border:1px solid var(--ink-12); color:var(--ink-80); background:transparent}
+  .fchip[aria-pressed="true"]{background:var(--ink); color:var(--bone); border-color:var(--ink)}
+  .sheet-actions{display:flex; gap:10px; padding:18px}
+  .sheet-actions button{flex:1; padding:14px; font-family:var(--label); font-weight:600; font-size:14px; letter-spacing:.03em}
+  .btn-clear{background:transparent; border:1px solid var(--ink); color:var(--ink)}
+  .btn-apply{background:var(--vermelho); color:var(--bone)}
+
+  /* ---------- DETAIL ---------- */
+  .detail-hero{background:var(--ink); color:var(--bone); padding:26px 22px 22px; position:relative; overflow:hidden}
+  .detail-hero .arcs2{position:absolute; left:-60px; bottom:-80px; width:220px; height:220px; opacity:.12; pointer-events:none}
+  .detail-cover{width:150px; height:150px; margin:0 auto 18px}
+  .detail-hero .d-artist{font-family:var(--display); font-size:27px; line-height:1; text-align:center; color:var(--bone); letter-spacing:.02em}
+  .detail-hero .d-title{font-family:var(--body); font-weight:400; font-size:16px; text-align:center; color:var(--bone-70); margin-top:8px; font-style:italic}
+  .detail-body{padding:20px 22px 6px}
+  .spec{display:flex; justify-content:space-between; gap:16px; padding:11px 0; border-bottom:1px solid var(--ink-12)}
+  .spec .k{font-family:var(--label); font-size:11px; font-weight:600; letter-spacing:.1em; text-transform:uppercase; color:var(--ink-55); flex:0 0 auto}
+  .spec .v{font-family:var(--body); font-size:14px; color:var(--ink); text-align:right}
+  .d-note{margin-top:14px; padding:12px 14px; background:var(--areia); font-family:var(--body); font-size:13.5px; line-height:1.5; color:var(--ink-80)}
+  .d-note b{font-family:var(--label); font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase; color:var(--musgo); display:block; margin-bottom:4px}
+  .d-price-row{display:flex; align-items:baseline; justify-content:space-between; padding:18px 0 6px}
+  .d-price{font-family:var(--display); font-size:32px; color:var(--ink); letter-spacing:.01em}
+  .d-cart{margin:14px 22px 0}
+  .d-cart button{
+    width:100%; padding:16px; font-family:var(--label); font-weight:600; font-size:15px; letter-spacing:.03em;
+    background:var(--vermelho); color:var(--bone); display:flex; align-items:center; justify-content:center; gap:9px;
+  }
+  .d-cart button.incart{background:transparent; border:1px solid var(--musgo); color:var(--musgo)}
+  .d-cart button.sold{background:var(--ink-12); color:var(--ink-55); pointer-events:none}
+  .d-actions{display:flex; gap:10px; padding:12px 22px 4px}
+  .d-actions a{flex:1; text-align:center; padding:14px 10px; font-family:var(--label); font-weight:600; font-size:14px; letter-spacing:.02em; text-decoration:none; display:flex; align-items:center; justify-content:center; gap:8px; border:1px solid var(--ink); color:var(--ink)}
+  .d-discogs{display:block; text-align:center; padding:16px; font-family:var(--label); font-size:12px; letter-spacing:.05em; color:var(--ink-55); text-decoration:underline; text-underline-offset:3px}
+
+  /* ---------- CART ---------- */
+  .cart-item{display:flex; gap:12px; align-items:center; padding:12px 18px; border-bottom:1px solid var(--ink-12)}
+  .cart-item .cover{width:48px; height:48px}
+  .cart-item .ci-info{flex:1; min-width:0}
+  .cart-item .ci-artist{font-family:var(--body); font-weight:700; font-size:14px; overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .cart-item .ci-title{font-family:var(--body); font-size:13px; color:var(--ink-55); overflow:hidden; text-overflow:ellipsis; white-space:nowrap}
+  .cart-item .ci-right{display:flex; flex-direction:column; align-items:flex-end; gap:6px}
+  .cart-item .ci-price{font-family:var(--label); font-weight:700; font-size:14px}
+  .cart-item .ci-rm{font-family:var(--label); font-size:11px; color:var(--ink-55); text-decoration:underline; text-underline-offset:2px; padding:2px}
+  .cart-empty{padding:56px 32px; text-align:center; color:var(--ink-55)}
+  .cart-empty .big{font-family:var(--display); font-size:22px; color:var(--ink-80); margin-bottom:8px}
+  .cart-foot{padding:16px 18px 6px; border-top:2px solid var(--ink)}
+  .cart-total{display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px}
+  .cart-total .lbl{font-family:var(--label); font-size:12px; letter-spacing:.08em; text-transform:uppercase; color:var(--ink-55)}
+  .cart-total .val{font-family:var(--display); font-size:30px; color:var(--ink)}
+  .cart-checkout{width:100%; padding:16px; background:var(--vermelho); color:var(--bone); font-family:var(--label); font-weight:600; font-size:15px; letter-spacing:.03em; display:flex; align-items:center; justify-content:center; gap:9px}
+  .cart-hint{text-align:center; font-family:var(--body); font-size:12.5px; color:var(--ink-55); margin-top:12px; line-height:1.5}
+
+  /* ---------- TOAST ---------- */
+  #toast{
+    position:fixed; left:50%; bottom:calc(28px + env(safe-area-inset-bottom)); transform:translateX(-50%) translateY(20px);
+    background:var(--ink); color:var(--bone); font-family:var(--label); font-size:13.5px; font-weight:600; letter-spacing:.02em;
+    padding:12px 20px; z-index:120; opacity:0; pointer-events:none; transition:opacity .2s, transform .2s; display:flex; align-items:center; gap:8px;
+  }
+  #toast.show{opacity:1; transform:translateX(-50%) translateY(0)}
+
+  @media (prefers-reduced-motion: reduce){ *{animation:none !important; transition:none !important} }
+  @media (min-width:620px){
+    .wordmark{font-size:38px}
+    main{max-width:620px; margin:0 auto}
+    .filterbar .chips,.filterbar .metarow{max-width:620px; margin-left:auto; margin-right:auto}
+    .sheet{max-width:620px; left:50%; transform:translateX(-50%) translateY(100%)}
+    .sheet.open{transform:translateX(-50%)}
+  }
+</style>
+</head>
+<body>
+
+<!-- ===================== QR SCREEN (demo: toque = escanear) ===================== -->
+<div id="qrscreen">
+  <div class="qrs-top">
+    <svg class="arcs" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#EFE7D6" stroke-width="0.6"><circle cx="50" cy="50" r="11"/><circle cx="50" cy="50" r="18"/><circle cx="50" cy="50" r="25"/><circle cx="50" cy="50" r="32"/><circle cx="50" cy="50" r="39"/><circle cx="50" cy="50" r="46"/></g></svg>
+    <div class="qrs-word">SULCO</div>
+    <div class="qrs-kick">Som&nbsp;&amp;&nbsp;Discos</div>
+  </div>
+  <div class="qrs-body">
+    <div class="qrs-label">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 8V5a1 1 0 0 1 1-1h3"/><path d="M20 8V5a1 1 0 0 0-1-1h-3"/><path d="M4 16v3a1 1 0 0 0 1 1h3"/><path d="M20 16v3a1 1 0 0 1-1 1h-3"/></svg>
+      Escaneie com a câmera
+    </div>
+    <button class="qr-tap" id="qrTap" aria-label="Simular a leitura do QR code e entrar">
+      <div class="qr-frame"><svg viewBox="0 0 31 31" xmlns="http://www.w3.org/2000/svg" shape-rendering="crispEdges" fill="#1C1814"><rect x="3" y="3" width="1" height="1"/><rect x="4" y="3" width="1" height="1"/><rect x="5" y="3" width="1" height="1"/><rect x="6" y="3" width="1" height="1"/><rect x="7" y="3" width="1" height="1"/><rect x="8" y="3" width="1" height="1"/><rect x="9" y="3" width="1" height="1"/><rect x="14" y="3" width="1" height="1"/><rect x="16" y="3" width="1" height="1"/><rect x="21" y="3" width="1" height="1"/><rect x="22" y="3" width="1" height="1"/><rect x="23" y="3" width="1" height="1"/><rect x="24" y="3" width="1" height="1"/><rect x="25" y="3" width="1" height="1"/><rect x="26" y="3" width="1" height="1"/><rect x="27" y="3" width="1" height="1"/><rect x="3" y="4" width="1" height="1"/><rect x="9" y="4" width="1" height="1"/><rect x="11" y="4" width="1" height="1"/><rect x="15" y="4" width="1" height="1"/><rect x="16" y="4" width="1" height="1"/><rect x="19" y="4" width="1" height="1"/><rect x="21" y="4" width="1" height="1"/><rect x="27" y="4" width="1" height="1"/><rect x="3" y="5" width="1" height="1"/><rect x="5" y="5" width="1" height="1"/><rect x="6" y="5" width="1" height="1"/><rect x="7" y="5" width="1" height="1"/><rect x="9" y="5" width="1" height="1"/><rect x="11" y="5" width="1" height="1"/><rect x="12" y="5" width="1" height="1"/><rect x="15" y="5" width="1" height="1"/><rect x="16" y="5" width="1" height="1"/><rect x="21" y="5" width="1" height="1"/><rect x="23" y="5" width="1" height="1"/><rect x="24" y="5" width="1" height="1"/><rect x="25" y="5" width="1" height="1"/><rect x="27" y="5" width="1" height="1"/><rect x="3" y="6" width="1" height="1"/><rect x="5" y="6" width="1" height="1"/><rect x="6" y="6" width="1" height="1"/><rect x="7" y="6" width="1" height="1"/><rect x="9" y="6" width="1" height="1"/><rect x="13" y="6" width="1" height="1"/><rect x="16" y="6" width="1" height="1"/><rect x="17" y="6" width="1" height="1"/><rect x="21" y="6" width="1" height="1"/><rect x="23" y="6" width="1" height="1"/><rect x="24" y="6" width="1" height="1"/><rect x="25" y="6" width="1" height="1"/><rect x="27" y="6" width="1" height="1"/><rect x="3" y="7" width="1" height="1"/><rect x="5" y="7" width="1" height="1"/><rect x="6" y="7" width="1" height="1"/><rect x="7" y="7" width="1" height="1"/><rect x="9" y="7" width="1" height="1"/><rect x="15" y="7" width="1" height="1"/><rect x="17" y="7" width="1" height="1"/><rect x="18" y="7" width="1" height="1"/><rect x="19" y="7" width="1" height="1"/><rect x="21" y="7" width="1" height="1"/><rect x="23" y="7" width="1" height="1"/><rect x="24" y="7" width="1" height="1"/><rect x="25" y="7" width="1" height="1"/><rect x="27" y="7" width="1" height="1"/><rect x="3" y="8" width="1" height="1"/><rect x="9" y="8" width="1" height="1"/><rect x="12" y="8" width="1" height="1"/><rect x="21" y="8" width="1" height="1"/><rect x="27" y="8" width="1" height="1"/><rect x="3" y="9" width="1" height="1"/><rect x="4" y="9" width="1" height="1"/><rect x="5" y="9" width="1" height="1"/><rect x="6" y="9" width="1" height="1"/><rect x="7" y="9" width="1" height="1"/><rect x="8" y="9" width="1" height="1"/><rect x="9" y="9" width="1" height="1"/><rect x="11" y="9" width="1" height="1"/><rect x="13" y="9" width="1" height="1"/><rect x="15" y="9" width="1" height="1"/><rect x="17" y="9" width="1" height="1"/><rect x="19" y="9" width="1" height="1"/><rect x="21" y="9" width="1" height="1"/><rect x="22" y="9" width="1" height="1"/><rect x="23" y="9" width="1" height="1"/><rect x="24" y="9" width="1" height="1"/><rect x="25" y="9" width="1" height="1"/><rect x="26" y="9" width="1" height="1"/><rect x="27" y="9" width="1" height="1"/><rect x="13" y="10" width="1" height="1"/><rect x="14" y="10" width="1" height="1"/><rect x="17" y="10" width="1" height="1"/><rect x="18" y="10" width="1" height="1"/><rect x="19" y="10" width="1" height="1"/><rect x="4" y="11" width="1" height="1"/><rect x="5" y="11" width="1" height="1"/><rect x="6" y="11" width="1" height="1"/><rect x="8" y="11" width="1" height="1"/><rect x="9" y="11" width="1" height="1"/><rect x="12" y="11" width="1" height="1"/><rect x="15" y="11" width="1" height="1"/><rect x="17" y="11" width="1" height="1"/><rect x="18" y="11" width="1" height="1"/><rect x="19" y="11" width="1" height="1"/><rect x="25" y="11" width="1" height="1"/><rect x="26" y="11" width="1" height="1"/><rect x="3" y="12" width="1" height="1"/><rect x="6" y="12" width="1" height="1"/><rect x="7" y="12" width="1" height="1"/><rect x="11" y="12" width="1" height="1"/><rect x="13" y="12" width="1" height="1"/><rect x="17" y="12" width="1" height="1"/><rect x="19" y="12" width="1" height="1"/><rect x="20" y="12" width="1" height="1"/><rect x="22" y="12" width="1" height="1"/><rect x="26" y="12" width="1" height="1"/><rect x="3" y="13" width="1" height="1"/><rect x="4" y="13" width="1" height="1"/><rect x="5" y="13" width="1" height="1"/><rect x="9" y="13" width="1" height="1"/><rect x="11" y="13" width="1" height="1"/><rect x="14" y="13" width="1" height="1"/><rect x="16" y="13" width="1" height="1"/><rect x="17" y="13" width="1" height="1"/><rect x="19" y="13" width="1" height="1"/><rect x="22" y="13" width="1" height="1"/><rect x="3" y="14" width="1" height="1"/><rect x="4" y="14" width="1" height="1"/><rect x="6" y="14" width="1" height="1"/><rect x="10" y="14" width="1" height="1"/><rect x="13" y="14" width="1" height="1"/><rect x="15" y="14" width="1" height="1"/><rect x="16" y="14" width="1" height="1"/><rect x="18" y="14" width="1" height="1"/><rect x="19" y="14" width="1" height="1"/><rect x="20" y="14" width="1" height="1"/><rect x="22" y="14" width="1" height="1"/><rect x="24" y="14" width="1" height="1"/><rect x="25" y="14" width="1" height="1"/><rect x="4" y="15" width="1" height="1"/><rect x="6" y="15" width="1" height="1"/><rect x="8" y="15" width="1" height="1"/><rect x="9" y="15" width="1" height="1"/><rect x="10" y="15" width="1" height="1"/><rect x="12" y="15" width="1" height="1"/><rect x="14" y="15" width="1" height="1"/><rect x="15" y="15" width="1" height="1"/><rect x="18" y="15" width="1" height="1"/><rect x="20" y="15" width="1" height="1"/><rect x="21" y="15" width="1" height="1"/><rect x="22" y="15" width="1" height="1"/><rect x="23" y="15" width="1" height="1"/><rect x="25" y="15" width="1" height="1"/><rect x="26" y="15" width="1" height="1"/><rect x="27" y="15" width="1" height="1"/><rect x="4" y="16" width="1" height="1"/><rect x="5" y="16" width="1" height="1"/><rect x="6" y="16" width="1" height="1"/><rect x="7" y="16" width="1" height="1"/><rect x="11" y="16" width="1" height="1"/><rect x="12" y="16" width="1" height="1"/><rect x="14" y="16" width="1" height="1"/><rect x="17" y="16" width="1" height="1"/><rect x="18" y="16" width="1" height="1"/><rect x="19" y="16" width="1" height="1"/><rect x="20" y="16" width="1" height="1"/><rect x="21" y="16" width="1" height="1"/><rect x="22" y="16" width="1" height="1"/><rect x="23" y="16" width="1" height="1"/><rect x="27" y="16" width="1" height="1"/><rect x="4" y="17" width="1" height="1"/><rect x="6" y="17" width="1" height="1"/><rect x="9" y="17" width="1" height="1"/><rect x="13" y="17" width="1" height="1"/><rect x="16" y="17" width="1" height="1"/><rect x="19" y="17" width="1" height="1"/><rect x="20" y="17" width="1" height="1"/><rect x="21" y="17" width="1" height="1"/><rect x="23" y="17" width="1" height="1"/><rect x="25" y="17" width="1" height="1"/><rect x="26" y="17" width="1" height="1"/><rect x="3" y="18" width="1" height="1"/><rect x="5" y="18" width="1" height="1"/><rect x="6" y="18" width="1" height="1"/><rect x="10" y="18" width="1" height="1"/><rect x="11" y="18" width="1" height="1"/><rect x="13" y="18" width="1" height="1"/><rect x="14" y="18" width="1" height="1"/><rect x="15" y="18" width="1" height="1"/><rect x="17" y="18" width="1" height="1"/><rect x="19" y="18" width="1" height="1"/><rect x="21" y="18" width="1" height="1"/><rect x="22" y="18" width="1" height="1"/><rect x="23" y="18" width="1" height="1"/><rect x="27" y="18" width="1" height="1"/><rect x="5" y="19" width="1" height="1"/><rect x="9" y="19" width="1" height="1"/><rect x="10" y="19" width="1" height="1"/><rect x="12" y="19" width="1" height="1"/><rect x="15" y="19" width="1" height="1"/><rect x="18" y="19" width="1" height="1"/><rect x="19" y="19" width="1" height="1"/><rect x="20" y="19" width="1" height="1"/><rect x="21" y="19" width="1" height="1"/><rect x="22" y="19" width="1" height="1"/><rect x="23" y="19" width="1" height="1"/><rect x="24" y="19" width="1" height="1"/><rect x="25" y="19" width="1" height="1"/><rect x="26" y="19" width="1" height="1"/><rect x="27" y="19" width="1" height="1"/><rect x="11" y="20" width="1" height="1"/><rect x="14" y="20" width="1" height="1"/><rect x="16" y="20" width="1" height="1"/><rect x="19" y="20" width="1" height="1"/><rect x="23" y="20" width="1" height="1"/><rect x="25" y="20" width="1" height="1"/><rect x="27" y="20" width="1" height="1"/><rect x="3" y="21" width="1" height="1"/><rect x="4" y="21" width="1" height="1"/><rect x="5" y="21" width="1" height="1"/><rect x="6" y="21" width="1" height="1"/><rect x="7" y="21" width="1" height="1"/><rect x="8" y="21" width="1" height="1"/><rect x="9" y="21" width="1" height="1"/><rect x="12" y="21" width="1" height="1"/><rect x="15" y="21" width="1" height="1"/><rect x="16" y="21" width="1" height="1"/><rect x="19" y="21" width="1" height="1"/><rect x="21" y="21" width="1" height="1"/><rect x="23" y="21" width="1" height="1"/><rect x="25" y="21" width="1" height="1"/><rect x="26" y="21" width="1" height="1"/><rect x="27" y="21" width="1" height="1"/><rect x="3" y="22" width="1" height="1"/><rect x="9" y="22" width="1" height="1"/><rect x="11" y="22" width="1" height="1"/><rect x="13" y="22" width="1" height="1"/><rect x="14" y="22" width="1" height="1"/><rect x="16" y="22" width="1" height="1"/><rect x="17" y="22" width="1" height="1"/><rect x="19" y="22" width="1" height="1"/><rect x="23" y="22" width="1" height="1"/><rect x="26" y="22" width="1" height="1"/><rect x="3" y="23" width="1" height="1"/><rect x="5" y="23" width="1" height="1"/><rect x="6" y="23" width="1" height="1"/><rect x="7" y="23" width="1" height="1"/><rect x="9" y="23" width="1" height="1"/><rect x="13" y="23" width="1" height="1"/><rect x="15" y="23" width="1" height="1"/><rect x="16" y="23" width="1" height="1"/><rect x="17" y="23" width="1" height="1"/><rect x="19" y="23" width="1" height="1"/><rect x="20" y="23" width="1" height="1"/><rect x="21" y="23" width="1" height="1"/><rect x="22" y="23" width="1" height="1"/><rect x="23" y="23" width="1" height="1"/><rect x="24" y="23" width="1" height="1"/><rect x="26" y="23" width="1" height="1"/><rect x="3" y="24" width="1" height="1"/><rect x="5" y="24" width="1" height="1"/><rect x="6" y="24" width="1" height="1"/><rect x="7" y="24" width="1" height="1"/><rect x="9" y="24" width="1" height="1"/><rect x="11" y="24" width="1" height="1"/><rect x="12" y="24" width="1" height="1"/><rect x="15" y="24" width="1" height="1"/><rect x="16" y="24" width="1" height="1"/><rect x="17" y="24" width="1" height="1"/><rect x="19" y="24" width="1" height="1"/><rect x="20" y="24" width="1" height="1"/><rect x="21" y="24" width="1" height="1"/><rect x="23" y="24" width="1" height="1"/><rect x="24" y="24" width="1" height="1"/><rect x="25" y="24" width="1" height="1"/><rect x="26" y="24" width="1" height="1"/><rect x="27" y="24" width="1" height="1"/><rect x="3" y="25" width="1" height="1"/><rect x="5" y="25" width="1" height="1"/><rect x="6" y="25" width="1" height="1"/><rect x="7" y="25" width="1" height="1"/><rect x="9" y="25" width="1" height="1"/><rect x="11" y="25" width="1" height="1"/><rect x="12" y="25" width="1" height="1"/><rect x="15" y="25" width="1" height="1"/><rect x="18" y="25" width="1" height="1"/><rect x="19" y="25" width="1" height="1"/><rect x="20" y="25" width="1" height="1"/><rect x="21" y="25" width="1" height="1"/><rect x="23" y="25" width="1" height="1"/><rect x="25" y="25" width="1" height="1"/><rect x="26" y="25" width="1" height="1"/><rect x="3" y="26" width="1" height="1"/><rect x="9" y="26" width="1" height="1"/><rect x="11" y="26" width="1" height="1"/><rect x="14" y="26" width="1" height="1"/><rect x="15" y="26" width="1" height="1"/><rect x="16" y="26" width="1" height="1"/><rect x="17" y="26" width="1" height="1"/><rect x="23" y="26" width="1" height="1"/><rect x="25" y="26" width="1" height="1"/><rect x="3" y="27" width="1" height="1"/><rect x="4" y="27" width="1" height="1"/><rect x="5" y="27" width="1" height="1"/><rect x="6" y="27" width="1" height="1"/><rect x="7" y="27" width="1" height="1"/><rect x="8" y="27" width="1" height="1"/><rect x="9" y="27" width="1" height="1"/><rect x="17" y="27" width="1" height="1"/><rect x="20" y="27" width="1" height="1"/><rect x="22" y="27" width="1" height="1"/><rect x="23" y="27" width="1" height="1"/><rect x="24" y="27" width="1" height="1"/><rect x="25" y="27" width="1" height="1"/><rect x="26" y="27" width="1" height="1"/><rect x="27" y="27" width="1" height="1"/></svg></div>
+    </button>
+    <div class="qrs-hint">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11.5V6a1.5 1.5 0 0 1 3 0v5"/><path d="M12 11V4.5a1.5 1.5 0 0 1 3 0V11"/><path d="M15 11V6.5a1.5 1.5 0 0 1 3 0V13c0 4-2.5 7-6.5 7S6 17 5 15l-1.2-2.2a1.5 1.5 0 0 1 2.5-1.6L7.5 13"/></svg>
+      toque no código para simular
+    </div>
+    <div class="qrs-title">O acervo inteiro,<br>no seu tempo.</div>
+    <div class="qrs-sub">Aponte a câmera e explore: preço, escuta e reserva de cada disco.</div>
+    <div class="qrs-rule"></div>
+    <div class="qrs-url">sulco.com.br</div>
+    <div class="qrs-foot">ou peça a um atendente — estamos por aqui</div>
+  </div>
+</div>
+
+<!-- ===================== WELCOME (QR) ===================== -->
+<div id="welcome">
+  <div class="w-top">
+    <svg class="warcs" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#EFE7D6" stroke-width="0.7"><circle cx="50" cy="50" r="12"/><circle cx="50" cy="50" r="20"/><circle cx="50" cy="50" r="28"/><circle cx="50" cy="50" r="36"/><circle cx="50" cy="50" r="44"/></g></svg>
+    <div class="w-word">SULCO</div>
+    <div class="w-kick">Som&nbsp;&amp;&nbsp;Discos</div>
+  </div>
+  <div class="w-bot">
+    <div class="w-inner">
+      <div class="w-rule"></div>
+      <div class="w-hi">Seja bem-vindo.</div>
+      <div class="w-body">Este é o nosso acervo. Explore no seu tempo, ouça o que quiser, garimpe sem pressa.</div>
+      <div class="w-help">Quer ajuda pra encontrar ou ouvir um disco? <b>é só chamar um atendente</b> — estamos por aqui.</div>
+      <button class="w-cta" id="enterBtn">Ver o acervo
+        <svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><line x1="4" y1="12" x2="19" y2="12"/><polyline points="13 6 19 12 13 18"/></svg>
+      </button>
+    </div>
+  </div>
+</div>
+
+<!-- ===================== HEADER ===================== -->
+<header>
+  <svg class="arcs" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#EFE7D6" stroke-width="1.4"><circle cx="50" cy="50" r="14"/><circle cx="50" cy="50" r="24"/><circle cx="50" cy="50" r="34"/><circle cx="50" cy="50" r="44"/></g></svg>
+  <div class="brandrow">
+    <div class="wordmark">SULCO</div>
+    <div class="kicker">Som&nbsp;&amp;&nbsp;Discos</div>
+    <button class="cartbtn" id="cartBtn" aria-label="Ver carrinho">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8"><path d="M5 7h14l-1 13H6L5 7z"/><path d="M9 7V5.5a3 3 0 0 1 6 0V7"/></svg>
+      <span class="cbadge" id="cartBadge">0</span>
+    </button>
+  </div>
+  <div class="searchwrap" id="searchwrap">
+    <svg class="mag" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.5" y2="16.5"/></svg>
+    <input id="q" type="search" inputmode="search" autocomplete="off" placeholder="Buscar artista, título, selo…" aria-label="Buscar no acervo">
+    <button class="clr" id="clr" aria-label="Limpar busca">×</button>
+  </div>
+</header>
+
+<div class="filterbar">
+  <div class="chips" id="genrechips"></div>
+  <div class="metarow">
+    <div class="count" id="count"></div>
+    <button class="morebtn" id="moreBtn" aria-haspopup="dialog">
+      <span class="dot"></span>
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="4" y1="7" x2="20" y2="7"/><line x1="4" y1="12" x2="20" y2="12"/><line x1="4" y1="17" x2="20" y2="17"/><circle cx="9" cy="7" r="2.2" fill="#EFE7D6"/><circle cx="15" cy="12" r="2.2" fill="#EFE7D6"/><circle cx="8" cy="17" r="2.2" fill="#EFE7D6"/></svg>
+      Ordenar e filtrar
+    </button>
+  </div>
+</div>
+
+<main id="list"></main>
+
+<!-- FILTER SHEET -->
+<div class="scrim" id="scrim"></div>
+<div class="sheet" id="filterSheet" role="dialog" aria-modal="true" aria-label="Ordenar e filtrar">
+  <div class="grab"></div>
+  <div class="sheet-head"><h2>Ordenar e filtrar</h2><button class="x" id="fClose" aria-label="Fechar">×</button></div>
+  <div class="fgroup"><h3>Ordenar por</h3><div class="fchips" id="sortchips"></div></div>
+  <div class="fgroup"><h3>Década</h3><div class="fchips" id="decadechips"></div></div>
+  <div class="fgroup"><h3>Preço</h3><div class="fchips" id="pricechips"></div></div>
+  <div class="sheet-actions">
+    <button class="btn-clear" id="fClear">Limpar tudo</button>
+    <button class="btn-apply" id="fApply">Ver discos</button>
+  </div>
+</div>
+
+<!-- DETAIL SHEET -->
+<div class="scrim" id="scrim2"></div>
+<div class="sheet" id="detailSheet" role="dialog" aria-modal="true" aria-label="Detalhe do disco"></div>
+
+<!-- CART SHEET -->
+<div class="scrim" id="scrim3"></div>
+<div class="sheet" id="cartSheet" role="dialog" aria-modal="true" aria-label="Carrinho"></div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+/* ===================================================================
+   SULCO — SELETOR DIGITAL · V3  (welcome + catálogo + carrinho)
+   -------------------------------------------------------------------
+   >>> CONFIGURE AQUI <<<
+   Troque pelo SEU WhatsApp (só dígitos, com 55 + DDD). Ex.: "5531988887777"
+=================================================================== */
+const SULCO_WHATSAPP = "5531900000000";   // <-- TROQUE PELO SEU NÚMERO
+const PLAYER = "youtube";                  // "youtube" ou "spotify"
+const BUSCAR_CAPAS = true;                 // true = tenta puxar capa (Apple/iTunes); false = só o selo SULCO
+/* =================================================================== */
+
+const DISCOS = [{"id":"3077513","a":"The Police","t":"Every Breath You Take (The Singles)","l":"A&M Records","f":"LP · Coletânea","g":"Internacional","y":1986,"dc":1980,"p":70,"s":"Na loja","cond":"","obs":"","in":"PO","c":0,"dc_url":"https://www.discogs.com/release/3077513","capa":"capas/3077513.jpg"},{"id":"6520742","a":"Various","t":"Nova História Da Música Popular Brasileira - Geraldo Pereira","l":"Abril Cultural","f":"10\" · Coletânea · Capa dupla","g":"Samba & Choro","y":1978,"dc":1970,"p":40,"s":"Na loja","cond":"","obs":"","in":"SU","c":1,"dc_url":"https://www.discogs.com/release/6520742","capa":"capas/6520742.jpg"},{"id":"3647647","a":"Various","t":"História Da Música Popular Brasileira - Milton Nascimento","l":"Abril Cultural","f":"LP · Coletânea · Capa dupla","g":"MPB","y":1983,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"SU","c":2,"dc_url":"https://www.discogs.com/release/3647647","capa":"capas/3647647.jpg"},{"id":"2650819","a":"Various","t":"História Da Música Popular Brasileira - Pixinguinha","l":"Abril Cultural","f":"LP · Coletânea · Capa dupla","g":"Samba & Choro","y":1983,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"SU","c":3,"dc_url":"https://www.discogs.com/release/2650819","capa":"capas/2650819.jpg"},{"id":"3171443","a":"Various","t":"História Da Música Popular Brasileira - Chico Buarque","l":"Abril Cultural","f":"LP · Coletânea · Capa dupla","g":"MPB","y":1982,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"SU","c":4,"dc_url":"https://www.discogs.com/release/3171443","capa":"capas/3171443.jpg"},{"id":"3171504","a":"Various","t":"História Da Música Popular Brasileira - Dorival Caymmi","l":"Abril Cultural","f":"LP · Coletânea","g":"MPB","y":1982,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"SU","c":5,"dc_url":"https://www.discogs.com/release/3171504","capa":"capas/3171504.jpg"},{"id":"5727637","a":"Various","t":"História Da Música Popular Brasileira - Ary Barroso","l":"Abril Cultural","f":"LP · Coletânea · Capa dupla","g":"Samba & Choro","y":1982,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"SU","c":6,"dc_url":"https://www.discogs.com/release/5727637","capa":"capas/5727637.jpg"},{"id":"3753247","a":"Various","t":"História Da Música Popular Brasileira - Alceu Valença","l":"Abril Cultural","f":"LP · Coletânea · Capa dupla","g":"MPB","y":1984,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"SU","c":7,"dc_url":"https://www.discogs.com/release/3753247","capa":"capas/3753247.jpg"},{"id":"2270587","a":"Various","t":"História Da Música Popular Brasileira - Gilberto Gil","l":"Abril Cultural","f":"LP · Coletânea · Capa dupla","g":"MPB","y":1982,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"SU","c":8,"dc_url":"https://www.discogs.com/release/2270587","capa":"capas/2270587.jpg"},{"id":"9496800","a":"John Lennon","t":"Imagine","l":"Apple Records","f":"LP","g":"Internacional","y":1981,"dc":1980,"p":90,"s":"Na loja","cond":"","obs":"","in":"JL","c":9,"dc_url":"https://www.discogs.com/release/9496800","capa":"capas/9496800.jpg"},{"id":"6980651","a":"The Beatles","t":"Let It Be","l":"Apple Records","f":"LP · San","g":"Internacional","y":1970,"dc":1970,"p":110,"s":"Na loja","cond":"","obs":"","in":"BE","c":10,"dc_url":"https://www.discogs.com/release/6980651","capa":"capas/6980651.jpg"},{"id":"6779596","a":"Milton Nascimento","t":"Caçador De Mim","l":"Ariola","f":"LP","g":"MPB","y":1981,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"MN","c":11,"dc_url":"https://www.discogs.com/release/6779596","capa":"capas/6779596.jpg"},{"id":"2693339","a":"Whitney Houston","t":"Whitney Houston","l":"Arista","f":"LP","g":"Internacional","y":1985,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"WH","c":12,"dc_url":"https://www.discogs.com/release/2693339","capa":"capas/2693339.jpg"},{"id":"173278","a":"Tim Maia","t":"Disco Club","l":"Atlantic","f":"LP","g":"MPB","y":1978,"dc":1970,"p":90,"s":"Na loja","cond":"","obs":"","in":"TM","c":13,"dc_url":"https://www.discogs.com/release/173278","capa":"capas/173278.jpg"},{"id":"22348537","a":"Milton Nascimento","t":"Ao Vivo","l":"Barclay","f":"LP · Capa dupla","g":"MPB","y":1983,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"MN","c":14,"dc_url":"https://www.discogs.com/release/22348537","capa":"capas/22348537.jpg"},{"id":"2324634","a":"Milton Nascimento & Wayne Shorter","t":"A Barca Dos Amantes","l":"Barclay","f":"LP","g":"Jazz & Instrumental","y":1986,"dc":1980,"p":70,"s":"Na loja","cond":"","obs":"","in":"MN","c":15,"dc_url":"https://www.discogs.com/release/2324634","capa":"capas/2324634.jpg"},{"id":"31916179","a":"Geraldo Tavares (2)","t":"Noites Que Não Voltam Mais","l":"Bemol","f":"LP","g":"Jazz & Instrumental","y":null,"dc":null,"p":50,"s":"Na loja","cond":"","obs":"","in":"GT","c":16,"dc_url":"https://www.discogs.com/release/31916179","capa":"capas/31916179.jpg"},{"id":"31916179","a":"Geraldo Tavares (2)","t":"Noites Que Não Voltam Mais","l":"Bemol","f":"LP","g":"Jazz & Instrumental","y":null,"dc":null,"p":50,"s":"Na loja","cond":"","obs":"","in":"GT","c":17,"dc_url":"https://www.discogs.com/release/31916179","capa":"capas/31916179.jpg"},{"id":"13728360","a":"Silvar E Seu Regional","t":"Saudade Presente","l":"Bemol / Visiorama","f":"LP","g":"Samba & Choro","y":null,"dc":null,"p":50,"s":"Na loja","cond":"","obs":"","in":"SR","c":18,"dc_url":"https://www.discogs.com/release/13728360","capa":"capas/13728360.jpg"},{"id":"1518427","a":"Roberto Carlos","t":"Roberto Carlos","l":"CBS","f":"LP","g":"MPB","y":1969,"dc":1960,"p":50,"s":"Na loja","cond":"","obs":"","in":"RC","c":19,"dc_url":"https://www.discogs.com/release/1518427","capa":"capas/1518427.jpg"},{"id":"2700170","a":"Simone (3)","t":"Corpo E Alma","l":"CBS","f":"LP","g":"MPB","y":1982,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"SI","c":20,"dc_url":"https://www.discogs.com/release/2700170","capa":"capas/2700170.jpg"},{"id":"2598060","a":"Milton Nascimento","t":"Yauaretê","l":"CBS","f":"LP · Capa dupla","g":"MPB","y":1987,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"MN","c":21,"dc_url":"https://www.discogs.com/release/2598060","capa":"capas/2598060.jpg"},{"id":"3063093","a":"Simone (3)","t":"Desejos","l":"Discos CBS","f":"LP","g":"MPB","y":1984,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"SI","c":22,"dc_url":"https://www.discogs.com/release/3063093","capa":"capas/3063093.jpg"},{"id":"5606065","a":"Barbra Streisand","t":"Memories","l":"Discos CBS","f":"LP · Coletânea","g":"Internacional","y":1981,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"BS","c":23,"dc_url":"https://www.discogs.com/release/5606065","capa":"capas/5606065.jpg"},{"id":"1547235","a":"Roberto Carlos","t":"Roberto Carlos","l":"Discos CBS","f":"LP · Capa dupla","g":"MPB","y":1982,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"RC","c":24,"dc_url":"https://www.discogs.com/release/1547235","capa":"capas/1547235.jpg"},{"id":"1554195","a":"Roberto Carlos","t":"Roberto Carlos","l":"Discos CBS","f":"LP · Capa dupla","g":"MPB","y":1983,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"RC","c":25,"dc_url":"https://www.discogs.com/release/1554195","capa":"capas/1554195.jpg"},{"id":"15032222","a":"Alberto Calçada","t":"Cascata de Valsas","l":"Chantecler","f":"LP","g":"MPB","y":null,"dc":null,"p":50,"s":"Na loja","cond":"","obs":"","in":"AC","c":26,"dc_url":"https://www.discogs.com/release/15032222","capa":"capas/15032222.jpg"},{"id":"994226","a":"Genesis","t":"Follow You Follow Me","l":"Charisma","f":"Compacto 7\" · Compacto","g":"Internacional","y":1978,"dc":1970,"p":50,"s":"Na loja","cond":"","obs":"","in":"GE","c":27,"dc_url":"https://www.discogs.com/release/994226","capa":"capas/994226.jpg"},{"id":"8252986","a":"Época De Ouro","t":"Interpreta Pixinguinha E Benedito Lacerda","l":"Continental (3)","f":"LP","g":"Samba & Choro","y":1977,"dc":1970,"p":90,"s":"Na loja","cond":"","obs":"","in":"ÉO","c":28,"dc_url":"https://www.discogs.com/release/8252986","capa":"capas/8252986.jpg"},{"id":"3819667","a":"Chiclete Com Banana","t":"Gritos De Guerra","l":"Continental (3)","f":"LP","g":"Rock & Pop","y":1986,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"CB","c":29,"dc_url":"https://www.discogs.com/release/3819667","capa":"capas/3819667.jpg"},{"id":"5130814","a":"Roberto Silva","t":"Descendo O Morro Nº 3","l":"Copacabana","f":"LP · Reedição","g":"Samba & Choro","y":null,"dc":null,"p":60,"s":"Na loja","cond":"","obs":"","in":"RS","c":30,"dc_url":"https://www.discogs.com/release/5130814","capa":"capas/5130814.jpg"},{"id":"5493476","a":"Elizeth Cardoso E Silvio Caldas","t":"Elizeth Cardoso E Silvio Caldas","l":"Copacabana","f":"LP · Capa dupla","g":"Samba & Choro","y":1971,"dc":1970,"p":90,"s":"Na loja","cond":"","obs":"","in":"EC","c":31,"dc_url":"https://www.discogs.com/release/5493476","capa":"capas/5493476.jpg"},{"id":"9970744","a":"Marvin Gaye","t":"Romantically Yours","l":"Discos CBS","f":"LP · Coletânea","g":"Internacional","y":1985,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"MG","c":32,"dc_url":"https://www.discogs.com/release/9970744","capa":"capas/9970744.jpg"},{"id":"3374047","a":"Raimundo Fagner","t":"Beleza","l":"Discos CBS","f":"LP","g":"MPB","y":1979,"dc":1970,"p":60,"s":"Na loja","cond":"","obs":"","in":"RF","c":33,"dc_url":"https://www.discogs.com/release/3374047","capa":"capas/3374047.jpg"},{"id":"2870195","a":"Milton Nascimento","t":"Txai","l":"Discos CBS","f":"LP","g":"MPB","y":1990,"dc":1990,"p":60,"s":"Na loja","cond":"","obs":"","in":"MN","c":34,"dc_url":"https://www.discogs.com/release/2870195","capa":"capas/2870195.jpg"},{"id":"3165377","a":"Raimundo Fagner","t":"Raimundo Fagner","l":"Discos CBS","f":"LP · Capa dupla","g":"MPB","y":1980,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"RF","c":35,"dc_url":"https://www.discogs.com/release/3165377","capa":"capas/3165377.jpg"},{"id":"1547167","a":"Roberto Carlos","t":"Roberto Carlos","l":"Discos CBS","f":"LP · Capa dupla","g":"MPB","y":1981,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"RC","c":36,"dc_url":"https://www.discogs.com/release/1547167","capa":"capas/1547167.jpg"},{"id":"1185142","a":"Roberto Carlos","t":"Roberto Carlos","l":"Discos CBS","f":"LP · Reedição","g":"MPB","y":null,"dc":null,"p":50,"s":"Na loja","cond":"","obs":"","in":"RC","c":37,"dc_url":"https://www.discogs.com/release/1185142","capa":"capas/1185142.jpg"},{"id":"2270504","a":"Martinho Da Vila","t":"O Canto Das Lavadeiras","l":"Discos CBS","f":"LP","g":"Samba & Choro","y":1989,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"MV","c":38,"dc_url":"https://www.discogs.com/release/2270504","capa":"capas/2270504.jpg"},{"id":"2664862","a":"Toquinho & Vinicius","t":"São Demais Os Perigos Desta Vida...","l":"Discos RGE","f":"LP","g":"MPB","y":1972,"dc":1970,"p":100,"s":"Na loja","cond":"","obs":"","in":"TV","c":39,"dc_url":"https://www.discogs.com/release/2664862","capa":"capas/2664862.jpg"},{"id":"3022101","a":"Toquinho & Vinicius","t":"Toquinho & Vinicius","l":"Discos RGE","f":"LP · Coletânea","g":"MPB","y":1977,"dc":1970,"p":50,"s":"Na loja","cond":"","obs":"","in":"TV","c":40,"dc_url":"https://www.discogs.com/release/3022101","capa":"capas/3022101.jpg"},{"id":"2161408","a":"Gilberto Gil","t":"Realce","l":"Elektra","f":"LP · Capa dupla","g":"MPB","y":1979,"dc":1970,"p":70,"s":"Na loja","cond":"","obs":"","in":"GG","c":41,"dc_url":"https://www.discogs.com/release/2161408","capa":"capas/2161408.jpg"},{"id":"3768056","a":"Guilherme Arantes","t":"Amanhã","l":"Elektra","f":"LP · Coletânea","g":"MPB","y":1983,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"GA","c":42,"dc_url":"https://www.discogs.com/release/3768056","capa":"capas/3768056.jpg"},{"id":"2109102","a":"Kid Abelha","t":"Ao Vivo","l":"Elektra / WEA","f":"LP","g":"Rock & Pop","y":1986,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"KA","c":43,"dc_url":"https://www.discogs.com/release/2109102","capa":"capas/2109102.jpg"},{"id":"11706262","a":"Milton Nascimento","t":"Paixão E Fé","l":"EMI","f":"LP · Coletânea","g":"MPB","y":1980,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"MN","c":44,"dc_url":"https://www.discogs.com/release/11706262","capa":"capas/11706262.jpg"},{"id":"3353047","a":"Gonzaguinha","t":"Grávido","l":"EMI","f":"LP","g":"MPB","y":1984,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"GO","c":45,"dc_url":"https://www.discogs.com/release/3353047","capa":"capas/3353047.jpg"},{"id":"6257375","a":"Simone (3)","t":"14 Grandes Sucessos","l":"EMI","f":"LP · Coletânea","g":"MPB","y":1985,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"SI","c":46,"dc_url":"https://www.discogs.com/release/6257375","capa":"capas/6257375.jpg"},{"id":"6257375","a":"Simone (3)","t":"14 Grandes Sucessos","l":"EMI","f":"LP · Coletânea","g":"MPB","y":1985,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"SI","c":47,"dc_url":"https://www.discogs.com/release/6257375","capa":"capas/6257375.jpg"},{"id":"4435690","a":"Milton Nascimento","t":"Geraes","l":"EMI","f":"LP · Capa dupla","g":"MPB","y":1976,"dc":1970,"p":130,"s":"Na loja","cond":"","obs":"Original EMI 1976, órbita Clube da Esquina","in":"MN","c":48,"dc_url":"https://www.discogs.com/release/4435690","capa":"capas/4435690.jpg"},{"id":"6694903","a":"Raul Seixas","t":"O Carimbador Maluco / Lua Cheia","l":"Estúdio Eldorado","f":"Compacto 7\" · Compacto","g":"Rock & Pop","y":1983,"dc":1980,"p":70,"s":"Na loja","cond":"","obs":"","in":"RS","c":49,"dc_url":"https://www.discogs.com/release/6694903","capa":"capas/6694903.jpg"},{"id":"2425874","a":"Caetano Veloso","t":"A Arte Maior De Caetano Veloso","l":"Fontana","f":"2xLP · Coletânea · Reedição","g":"MPB","y":1983,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"CV","c":50,"dc_url":"https://www.discogs.com/release/2425874","capa":"capas/2425874.jpg"},{"id":"7831635","a":"Louis Armstrong","t":"Louis Armstrong & His Friends","l":"Fontana","f":"LP · Reedição","g":"Jazz & Instrumental","y":1979,"dc":1970,"p":60,"s":"Na loja","cond":"","obs":"","in":"LA","c":51,"dc_url":"https://www.discogs.com/release/7831635","capa":"capas/7831635.jpg"},{"id":"2471006","a":"Caetano Veloso","t":"A Arte De Caetano Veloso","l":"Fontana","f":"2xLP · Coletânea · Reedição · Capa dupla","g":"MPB","y":null,"dc":null,"p":60,"s":"Na loja","cond":"","obs":"","in":"CV","c":52,"dc_url":"https://www.discogs.com/release/2471006","capa":"capas/2471006.jpg"},{"id":"30416309","a":"Elis Regina","t":"Autógrafo De Sucessos No. 2","l":"Fontana","f":"LP · Coletânea","g":"MPB","y":1973,"dc":1970,"p":50,"s":"Na loja","cond":"","obs":"","in":"ER","c":53,"dc_url":"https://www.discogs.com/release/30416309","capa":"capas/30416309.jpg"},{"id":"13975691","a":"The Duke Ellington Orchestra","t":"Digital Duke","l":"GRP","f":"LP","g":"Jazz & Instrumental","y":1987,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"DE","c":54,"dc_url":"https://www.discogs.com/release/13975691","capa":"capas/13975691.jpg"},{"id":"15371095","a":"Janis Joplin","t":"I Got Dem Ol' Kozmic Blues Again Mama!","l":"Harmony (4)","f":"LP · Reedição","g":"Internacional","y":null,"dc":null,"p":70,"s":"Na loja","cond":"","obs":"","in":"JJ","c":55,"dc_url":"https://www.discogs.com/release/15371095","capa":"capas/15371095.jpg"},{"id":"8127848","a":"Various","t":"Instrumental- Und Vokalmusik","l":"Hochschule Der Künste Berlin","f":"LP · Coletânea","g":"Jazz & Instrumental","y":null,"dc":null,"p":50,"s":"Na loja","cond":"","obs":"","in":"IN","c":56,"dc_url":"https://www.discogs.com/release/8127848","capa":"capas/8127848.jpg"},{"id":"2962145","a":"Elomar - Geraldo Azevedo - Vital Farias - Xangai","t":"Cantoria","l":"Kuarup Discos","f":"LP","g":"Sertanejo & Raiz","y":1984,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"EG","c":57,"dc_url":"https://www.discogs.com/release/2962145","capa":"capas/2962145.jpg"},{"id":"32891868","a":"Stevie Wonder","t":"Characters","l":"Motown","f":"LP · Capa dupla","g":"Internacional","y":1987,"dc":1980,"p":70,"s":"Na loja","cond":"","obs":"","in":"SW","c":58,"dc_url":"https://www.discogs.com/release/32891868","capa":"capas/32891868.jpg"},{"id":"27025908","a":"Anelis Assumpção","t":"Sal","l":"Noize Record Club","f":"LP · Ed. clube · Ed. limitada · Ora","g":"MPB","y":2023,"dc":2020,"p":210,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido)","in":"AA","c":59,"dc_url":"https://www.discogs.com/release/27025908","capa":"capas/27025908.jpg"},{"id":"27638772","a":"Marina Sena (2)","t":"Vício Inerente","l":"Noize Record Club","f":"LP · Ed. clube · Ed. limitada · Vinil azul","g":"MPB","y":2023,"dc":2020,"p":260,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido) — alta procura","in":"MS","c":60,"dc_url":"https://www.discogs.com/release/27638772","capa":"capas/27638772.jpg"},{"id":"29018302","a":"Elza Soares","t":"No Tempo Da Intolerância","l":"Noize Record Club","f":"LP · Ed. clube · Ed. limitada · Yel","g":"Samba & Choro","y":2023,"dc":2020,"p":210,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido)","in":"ES","c":61,"dc_url":"https://www.discogs.com/release/29018302","capa":"capas/29018302.jpg"},{"id":"29855302","a":"FBC","t":"Padrim","l":"Noize Record Club","f":"LP · Ed. clube · Ed. limitada · Reedição · Gra","g":"MPB","y":2024,"dc":2020,"p":200,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido)","in":"FB","c":62,"dc_url":"https://www.discogs.com/release/29855302","capa":"capas/29855302.jpg"},{"id":"27858339","a":"Lenine & Marcos Suzano","t":"Olho De Peixe","l":"Noize Record Club / Casa 9","f":"LP · Ed. clube · Ed. limitada · Reedição · Remaster","g":"MPB","y":2023,"dc":2020,"p":210,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido)","in":"LM","c":63,"dc_url":"https://www.discogs.com/release/27858339","capa":"capas/27858339.jpg"},{"id":"27645582","a":"Gilberto Gil","t":"Nightingale","l":"Noize Record Club / Gege Produções Artísticas","f":"LP · Ed. clube · Ed. limitada · Reedição · Remaster · Pur","g":"MPB","y":2023,"dc":2020,"p":210,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido)","in":"GG","c":64,"dc_url":"https://www.discogs.com/release/27645582","capa":"capas/27645582.jpg"},{"id":"28113847","a":"Os Tincoãs","t":"Canto Coral Afrobrasileiro","l":"Noize Record Club / Sanzala Artística","f":"LP · Ed. clube · Ed. limitada · Reedição · Remaster · Vinil vermelho","g":"Samba & Choro","y":2023,"dc":2020,"p":260,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido) — alta procura","in":"OT","c":65,"dc_url":"https://www.discogs.com/release/28113847","capa":"capas/28113847.jpg"},{"id":"27333600","a":"Sandra De Sá","t":"Sandra Sá","l":"Noize Record Club / Som Livre","f":"LP · Ed. clube · Ed. limitada · Reedição · Bro","g":"MPB","y":2023,"dc":2020,"p":210,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido)","in":"SS","c":66,"dc_url":"https://www.discogs.com/release/27333600","capa":"capas/27333600.jpg"},{"id":"26770883","a":"Caetano Veloso","t":"Meu Coco","l":"Noize Record Club / Uns Produções","f":"LP · Ed. clube · Ed. limitada · Cle","g":"MPB","y":2023,"dc":2020,"p":210,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido)","in":"CV","c":67,"dc_url":"https://www.discogs.com/release/26770883","capa":"capas/26770883.jpg"},{"id":"29508625","a":"Belchior","t":"Belchior","l":"Noize Record Club / Warner Music Brasil","f":"LP · Ed. clube · Ed. limitada · Reedição · Remaster · Cle","g":"MPB","y":2024,"dc":2020,"p":200,"s":"Na loja","cond":"","obs":"Edição de clube Noize (vinil colorido)","in":"BE","c":68,"dc_url":"https://www.discogs.com/release/29508625","capa":"capas/29508625.jpg"},{"id":"3717142","a":"Chitãozinho & Xororó","t":"Os Grandes Sucessos","l":"Nova Copacabana","f":"LP · Coletânea","g":"Sertanejo & Raiz","y":1987,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"CX","c":69,"dc_url":"https://www.discogs.com/release/3717142","capa":"capas/3717142.jpg"},{"id":"3861638","a":"Clara Nunes","t":"Claridade","l":"Odeon","f":"LP · Capa dupla","g":"Samba & Choro","y":1975,"dc":1970,"p":120,"s":"Na loja","cond":"","obs":"","in":"CN","c":70,"dc_url":"https://www.discogs.com/release/3861638","capa":"capas/3861638.jpg"},{"id":"5683038","a":"Milton Nascimento","t":"O Talento De Milton Nascimento","l":"Odeon / EMI","f":"2xLP · Coletânea","g":"MPB","y":1985,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"MN","c":71,"dc_url":"https://www.discogs.com/release/5683038","capa":"capas/5683038.jpg"},{"id":"3399043","a":"Raimundo Fagner","t":"Dez Anos","l":"Opus/Columbia","f":"LP · Coletânea","g":"MPB","y":1984,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"RF","c":72,"dc_url":"https://www.discogs.com/release/3399043","capa":"capas/3399043.jpg"},{"id":"3159586","a":"James Taylor (2) / Carole King","t":"James Taylor / Carole King","l":"Opus/Columbia","f":"LP · Coletânea","g":"Internacional","y":1985,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"JT","c":73,"dc_url":"https://www.discogs.com/release/3159586","capa":"capas/3159586.jpg"},{"id":"2348617","a":"Caetano Veloso","t":"Circuladô","l":"Philips","f":"LP","g":"MPB","y":1991,"dc":1990,"p":60,"s":"Na loja","cond":"","obs":"","in":"CV","c":74,"dc_url":"https://www.discogs.com/release/2348617","capa":"capas/2348617.jpg"},{"id":"24639098","a":"Geraldo Azevedo","t":"Minha História - Geraldo Azevedo","l":"Philips","f":"LP · Coletânea · Remaster","g":"MPB","y":1993,"dc":1990,"p":50,"s":"Na loja","cond":"","obs":"","in":"GA","c":75,"dc_url":"https://www.discogs.com/release/24639098","capa":""},{"id":"7827737","a":"Elis Regina","t":"Falso Brilhante","l":"Philips","f":"Compacto 7\" · EP","g":"MPB","y":1976,"dc":1970,"p":70,"s":"Na loja","cond":"","obs":"","in":"ER","c":76,"dc_url":"https://www.discogs.com/release/7827737","capa":"capas/7827737.jpg"},{"id":"1690739","a":"Gal Costa","t":"Fantasia","l":"Philips","f":"LP","g":"MPB","y":1981,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"GC","c":77,"dc_url":"https://www.discogs.com/release/1690739","capa":"capas/1690739.jpg"},{"id":"10594887","a":"Maria Bethânia","t":"Rosa Dos Ventos","l":"Philips","f":"LP","g":"MPB","y":1971,"dc":1970,"p":120,"s":"Na loja","cond":"","obs":"Original Philips 1971","in":"MB","c":78,"dc_url":"https://www.discogs.com/release/10594887","capa":"capas/10594887.jpg"},{"id":"13249265","a":"MPB4","t":"Cicatrizes","l":"Philips","f":"LP · Capa dupla","g":"MPB","y":1972,"dc":1970,"p":90,"s":"Na loja","cond":"","obs":"","in":"MP","c":79,"dc_url":"https://www.discogs.com/release/13249265","capa":"capas/13249265.jpg"},{"id":"2001716","a":"Gilberto Gil","t":"Ao Vivo","l":"Philips","f":"LP","g":"MPB","y":1974,"dc":1970,"p":70,"s":"Na loja","cond":"","obs":"","in":"GG","c":80,"dc_url":"https://www.discogs.com/release/2001716","capa":"capas/2001716.jpg"},{"id":"2839960","a":"Chico Buarque","t":"Meus Caros Amigos","l":"Philips","f":"LP","g":"MPB","y":1976,"dc":1970,"p":130,"s":"Na loja","cond":"","obs":"Original Philips 1976","in":"CB","c":81,"dc_url":"https://www.discogs.com/release/2839960","capa":"capas/2839960.jpg"},{"id":"2425305","a":"Caetano Veloso","t":"Muitos Carnavais","l":"Philips","f":"LP · Coletânea · Reedição","g":"MPB","y":null,"dc":null,"p":50,"s":"Na loja","cond":"","obs":"","in":"CV","c":82,"dc_url":"https://www.discogs.com/release/2425305","capa":"capas/2425305.jpg"},{"id":"894540","a":"Chico Buarque","t":"Chico Buarque","l":"Philips","f":"LP","g":"MPB","y":1978,"dc":1970,"p":90,"s":"Na loja","cond":"","obs":"","in":"CB","c":83,"dc_url":"https://www.discogs.com/release/894540","capa":"capas/894540.jpg"},{"id":"2388177","a":"Elis Regina","t":"Elis","l":"Philips","f":"LP","g":"MPB","y":1973,"dc":1970,"p":120,"s":"Na loja","cond":"","obs":"","in":"ER","c":84,"dc_url":"https://www.discogs.com/release/2388177","capa":"capas/2388177.jpg"},{"id":"1994555","a":"Gal Costa","t":"Cantar","l":"Philips","f":"LP","g":"MPB","y":1974,"dc":1970,"p":90,"s":"Na loja","cond":"","obs":"","in":"GC","c":85,"dc_url":"https://www.discogs.com/release/1994555","capa":"capas/1994555.jpg"},{"id":"865994","a":"Gal Costa","t":"Gal Canta Caymmi","l":"Philips","f":"LP","g":"MPB","y":1976,"dc":1970,"p":100,"s":"Na loja","cond":"","obs":"","in":"GC","c":86,"dc_url":"https://www.discogs.com/release/865994","capa":"capas/865994.jpg"},{"id":"2248532","a":"Toquinho & Vinicius","t":"10 Anos De Toquinho & Vinicius","l":"Philips","f":"LP","g":"MPB","y":1979,"dc":1970,"p":60,"s":"Na loja","cond":"","obs":"","in":"TV","c":87,"dc_url":"https://www.discogs.com/release/2248532","capa":"capas/2248532.jpg"},{"id":"3164667","a":"Maria Bethânia","t":"Ciclo","l":"Philips","f":"LP","g":"MPB","y":1983,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"MB","c":88,"dc_url":"https://www.discogs.com/release/3164667","capa":"capas/3164667.jpg"},{"id":"3372214","a":"Chico Buarque","t":"Minha História - O Melhor De Chico Buarque","l":"Philips","f":"2xLP · Coletânea · Capa dupla","g":"MPB","y":1988,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"CB","c":89,"dc_url":"https://www.discogs.com/release/3372214","capa":"capas/3372214.jpg"},{"id":"2454990","a":"João Gilberto","t":"João","l":"Philips","f":"LP","g":"MPB","y":1991,"dc":1990,"p":90,"s":"Na loja","cond":"","obs":"","in":"JG","c":90,"dc_url":"https://www.discogs.com/release/2454990","capa":"capas/2454990.jpg"},{"id":"865849","a":"Gal Costa","t":"Minha Voz","l":"Philips","f":"LP","g":"MPB","y":1982,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"GC","c":91,"dc_url":"https://www.discogs.com/release/865849","capa":"capas/865849.jpg"},{"id":"2394527","a":"Toquinho & Vinicius","t":"Vinícius & Toquinho","l":"Philips","f":"LP · Capa dupla","g":"MPB","y":1974,"dc":1970,"p":70,"s":"Na loja","cond":"","obs":"","in":"TV","c":92,"dc_url":"https://www.discogs.com/release/2394527","capa":"capas/2394527.jpg"},{"id":"2780092","a":"Toquinho & Vinicius","t":"Vinicius  / Toquinho","l":"Philips","f":"LP · Capa dupla","g":"MPB","y":1975,"dc":1970,"p":70,"s":"Na loja","cond":"","obs":"","in":"TV","c":93,"dc_url":"https://www.discogs.com/release/2780092","capa":"capas/2780092.jpg"},{"id":"2388473","a":"Elis Regina","t":"Elis","l":"Philips","f":"LP · Capa dupla","g":"MPB","y":1974,"dc":1970,"p":120,"s":"Na loja","cond":"","obs":"","in":"ER","c":94,"dc_url":"https://www.discogs.com/release/2388473","capa":"capas/2388473.jpg"},{"id":"2826726","a":"Quarteto Em Cy","t":"Resistindo - Ao Vivo","l":"Philips","f":"LP","g":"MPB","y":1977,"dc":1970,"p":60,"s":"Na loja","cond":"","obs":"","in":"QE","c":95,"dc_url":"https://www.discogs.com/release/2826726","capa":"capas/2826726.jpg"},{"id":"2669548","a":"Maria Bethânia","t":"Mel","l":"Philips","f":"LP","g":"MPB","y":1979,"dc":1970,"p":60,"s":"Na loja","cond":"","obs":"","in":"MB","c":96,"dc_url":"https://www.discogs.com/release/2669548","capa":"capas/2669548.jpg"},{"id":"1628533","a":"Chico Buarque","t":"Ópera Do Malandro","l":"Philips","f":"2xLP · Capa dupla","g":"MPB","y":1979,"dc":1970,"p":130,"s":"Na loja","cond":"","obs":"Duplo, gatefold, 1979","in":"CB","c":97,"dc_url":"https://www.discogs.com/release/1628533","capa":"capas/1628533.jpg"},{"id":"15430186","a":"Billy Jules E Sua Orquesta","t":"América Tropical","l":"Phonodisc Mid","f":"LP · Reedição","g":"Jazz & Instrumental","y":1986,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"BJ","c":98,"dc_url":"https://www.discogs.com/release/15430186","capa":"capas/15430186.jpg"},{"id":"1844250","a":"Tim Maia","t":"Tim Maia","l":"Polydor","f":"Compacto 7\" · EP","g":"MPB","y":1974,"dc":1970,"p":150,"s":"Na loja","cond":"","obs":"Reissue Polysom 180g","in":"TM","c":99,"dc_url":"https://www.discogs.com/release/1844250","capa":"capas/1844250.jpg"},{"id":"4235411","a":"Bert Kaempfert","t":"Bert Kaempfert Live In London","l":"Polydor","f":"LP","g":"Jazz & Instrumental","y":1975,"dc":1970,"p":50,"s":"Na loja","cond":"","obs":"","in":"BK","c":100,"dc_url":"https://www.discogs.com/release/4235411","capa":"capas/4235411.jpg"},{"id":"5194225","a":"Ataulfo Alves","t":"Tradição","l":"Polydor","f":"LP","g":"Samba & Choro","y":1967,"dc":1960,"p":100,"s":"Na loja","cond":"","obs":"","in":"AA","c":101,"dc_url":"https://www.discogs.com/release/5194225","capa":"capas/5194225.jpg"},{"id":"8825726","a":"Tim Maia","t":"Tim Maia","l":"Polysom","f":"LP · Reedição · 180","g":"MPB","y":2016,"dc":2010,"p":150,"s":"Na loja","cond":"","obs":"Reissue Polysom 180g","in":"TM","c":102,"dc_url":"https://www.discogs.com/release/8825726","capa":"capas/8825726.jpg"},{"id":"10493881","a":"Belchior","t":"Alucinação","l":"Polysom","f":"LP · Reedição","g":"MPB","y":2017,"dc":2010,"p":180,"s":"Na loja","cond":"","obs":"Reissue Polysom — clássico","in":"BE","c":103,"dc_url":"https://www.discogs.com/release/10493881","capa":"capas/10493881.jpg"},{"id":"1941144","a":"Gal Costa","t":"Profana","l":"RCA","f":"LP","g":"MPB","y":1984,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"GC","c":104,"dc_url":"https://www.discogs.com/release/1941144","capa":"capas/1941144.jpg"},{"id":"13332163","a":"Sérgio Reis","t":"Super 3 - Talento Produto Qualidade - Disco de Ouro","l":"RCA","f":"LP · Coletânea","g":"Sertanejo & Raiz","y":1983,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"SR","c":105,"dc_url":"https://www.discogs.com/release/13332163","capa":"capas/13332163.jpg"},{"id":"13834472","a":"Glenn Miller","t":"Disco De Ouro Vol. 2","l":"RCA","f":"LP · Coletânea","g":"Jazz & Instrumental","y":1979,"dc":1970,"p":50,"s":"Na loja","cond":"","obs":"","in":"GM","c":106,"dc_url":"https://www.discogs.com/release/13834472","capa":"capas/13834472.jpg"},{"id":"10700393","a":"Sandra De Sá","t":"A Gente Leva O Que Viver","l":"RCA","f":"12\" · Compacto · Promo","g":"MPB","y":1991,"dc":1990,"p":50,"s":"Na loja","cond":"","obs":"","in":"SS","c":107,"dc_url":"https://www.discogs.com/release/10700393","capa":"capas/10700393.jpg"},{"id":"7727063","a":"Orlando Silva","t":"Uma Dor E Uma Saudade","l":"RCA Camden","f":"LP · Coletânea · Mono · Reedição","g":"Samba & Choro","y":null,"dc":null,"p":50,"s":"Na loja","cond":"","obs":"","in":"OS","c":108,"dc_url":"https://www.discogs.com/release/7727063","capa":"capas/7727063.jpg"},{"id":"5641994","a":"Nelson Gonçalves","t":"Nelson Interpreta Noel","l":"RCA Camden","f":"LP","g":"Samba & Choro","y":1971,"dc":1970,"p":60,"s":"Na loja","cond":"","obs":"","in":"NG","c":109,"dc_url":"https://www.discogs.com/release/5641994","capa":"capas/5641994.jpg"},{"id":"5656926","a":"Paulinho Pedra Azul","t":"Jardim Da Fantasia","l":"RCA Victor","f":"LP","g":"MPB","y":1982,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"PP","c":110,"dc_url":"https://www.discogs.com/release/5656926","capa":"capas/5656926.jpg"},{"id":"1244939","a":"Martinho Da Vila","t":"Rosa Do Povo","l":"RCA Victor","f":"LP · Capa dupla","g":"Samba & Choro","y":1976,"dc":1970,"p":70,"s":"Na loja","cond":"","obs":"","in":"MV","c":111,"dc_url":"https://www.discogs.com/release/1244939","capa":"capas/1244939.jpg"},{"id":"3040678","a":"Maria Bethânia","t":"Dezembros","l":"RCA Victor","f":"LP","g":"MPB","y":1986,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"MB","c":112,"dc_url":"https://www.discogs.com/release/3040678","capa":"capas/3040678.jpg"},{"id":"3372131","a":"Raimundo Fagner","t":"Romance No Deserto","l":"RCA Victor","f":"LP","g":"MPB","y":1987,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"RF","c":113,"dc_url":"https://www.discogs.com/release/3372131","capa":"capas/3372131.jpg"},{"id":"4342862","a":"Luiz Gonzaga","t":"O Reino Do Baião","l":"RCA Victor","f":"10\"","g":"Sertanejo & Raiz","y":1957,"dc":1950,"p":290,"s":"Na loja","cond":"","obs":"10\" de 1957 — peça de colecionador; a condição define o preço","in":"LG","c":114,"dc_url":"https://www.discogs.com/release/4342862","capa":"capas/4342862.jpg"},{"id":"8285745","a":"Sérgio Reis","t":"Sérgio Reis","l":"RCA Victor","f":"LP","g":"Sertanejo & Raiz","y":1983,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"SR","c":115,"dc_url":"https://www.discogs.com/release/8285745","capa":"capas/8285745.jpg"},{"id":"13191941","a":"Toquinho & Vinicius","t":"Toquinho, Vinicius & Amigos","l":"RGE","f":"LP · Coletânea · Reedição","g":"MPB","y":1987,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"TV","c":116,"dc_url":"https://www.discogs.com/release/13191941","capa":"capas/13191941.jpg"},{"id":"8037182","a":"Raça Negra","t":"Banda Raça Negra Volume 2","l":"RGE","f":"LP","g":"Samba & Choro","y":1992,"dc":1990,"p":60,"s":"Na loja","cond":"","obs":"","in":"RN","c":117,"dc_url":"https://www.discogs.com/release/8037182","capa":"capas/8037182.jpg"},{"id":"15177278","a":"Raça Negra","t":"Raça Negra","l":"RGE","f":"LP","g":"Samba & Choro","y":1994,"dc":1990,"p":60,"s":"Na loja","cond":"","obs":"","in":"RN","c":118,"dc_url":"https://www.discogs.com/release/15177278","capa":"capas/15177278.jpg"},{"id":"2421797","a":"Chico Buarque De Hollanda","t":"Chico Buarque De Hollanda Volume 2","l":"RGE","f":"LP · Mono · Bla","g":"MPB","y":1967,"dc":1960,"p":210,"s":"Na loja","cond":"","obs":"2º LP do Chico (1967), mono — original cobiçado","in":"CB","c":119,"dc_url":"https://www.discogs.com/release/2421797","capa":"capas/2421797.jpg"},{"id":"6211862","a":"The Rolling Stones","t":"Emotional Rescue","l":"Rolling Stones Records","f":"LP","g":"Internacional","y":1980,"dc":1980,"p":90,"s":"Na loja","cond":"","obs":"","in":"RS","c":120,"dc_url":"https://www.discogs.com/release/6211862","capa":"capas/6211862.jpg"},{"id":"36683854","a":"Tim Maia","t":"Racional Vol. 1","l":"Seroma / Vitória Régia","f":"LP · Ed. clube · Ed. limitada · Reedição · Remaster · Whi","g":"MPB","y":2026,"dc":2020,"p":270,"s":"Na loja","cond":"","obs":"Racional Vol.1 — clube 2026, vinil branco (item-vitrine)","in":"TM","c":121,"dc_url":"https://www.discogs.com/release/36683854","capa":"capas/36683854.jpg"},{"id":"37653915","a":"Tim Maia","t":"Racional Vol. 2","l":"Seroma / Vitória Régia","f":"LP · Ed. clube · Ed. limitada · Reedição · Remaster · Whi","g":"MPB","y":2026,"dc":2020,"p":250,"s":"Na loja","cond":"","obs":"Racional Vol.2 — clube 2026, vinil branco","in":"TM","c":122,"dc_url":"https://www.discogs.com/release/37653915","capa":"capas/37653915.jpg"},{"id":"455035","a":"Madonna","t":"You Can Dance","l":"Sire","f":"LP · Coletânea","g":"Internacional","y":1988,"dc":1980,"p":70,"s":"Na loja","cond":"","obs":"","in":"MA","c":123,"dc_url":"https://www.discogs.com/release/455035","capa":"capas/455035.jpg"},{"id":"1382926","a":"Madonna","t":"Like A Prayer","l":"Sire","f":"LP","g":"Internacional","y":1989,"dc":1980,"p":90,"s":"Na loja","cond":"","obs":"","in":"MA","c":124,"dc_url":"https://www.discogs.com/release/1382926","capa":"capas/1382926.jpg"},{"id":"13993457","a":"Various","t":"Vinicius De Moraes","l":"som","f":"LP · Coletânea · Reedição","g":"MPB","y":null,"dc":null,"p":50,"s":"Na loja","cond":"","obs":"","in":"VM","c":125,"dc_url":"https://www.discogs.com/release/13993457","capa":"capas/13993457.jpg"},{"id":"2971853","a":"Os Cariocas","t":"Minha Namorada","l":"Som Livre","f":"LP","g":"MPB","y":1990,"dc":1990,"p":60,"s":"Na loja","cond":"","obs":"","in":"OC","c":126,"dc_url":"https://www.discogs.com/release/2971853","capa":"capas/2971853.jpg"},{"id":"2394489","a":"Elis Regina","t":"Luz Das Estrelas","l":"Som Livre","f":"LP","g":"MPB","y":1984,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"ER","c":127,"dc_url":"https://www.discogs.com/release/2394489","capa":"capas/2394489.jpg"},{"id":"2124361","a":"Xuxa","t":"4º Xou Da Xuxa","l":"Som Livre","f":"LP","g":"Infantil","y":1989,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"XU","c":128,"dc_url":"https://www.discogs.com/release/2124361","capa":"capas/2124361.jpg"},{"id":"2124402","a":"Xuxa","t":"Xuxa 5","l":"Som Livre","f":"LP","g":"Infantil","y":1990,"dc":1990,"p":50,"s":"Na loja","cond":"","obs":"","in":"XU","c":129,"dc_url":"https://www.discogs.com/release/2124402","capa":"capas/2124402.jpg"},{"id":"10840686","a":"Wando","t":"Dor Romântica - Os Grandes Sucessos De Wando","l":"Som Livre","f":"LP · Coletânea","g":"MPB","y":1989,"dc":1980,"p":40,"s":"Na loja","cond":"","obs":"","in":"WA","c":130,"dc_url":"https://www.discogs.com/release/10840686","capa":"capas/10840686.jpg"},{"id":"8270177","a":"Marvin Gaye","t":"The Art Of Marvin Gaye","l":"Som Livre","f":"LP · Coletânea","g":"Internacional","y":1984,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"MG","c":131,"dc_url":"https://www.discogs.com/release/8270177","capa":"capas/8270177.jpg"},{"id":"2440887","a":"Tim Maia","t":"Romântico","l":"Som Livre","f":"LP · Coletânea","g":"MPB","y":1993,"dc":1990,"p":50,"s":"Na loja","cond":"","obs":"","in":"TM","c":132,"dc_url":"https://www.discogs.com/release/2440887","capa":"capas/2440887.jpg"},{"id":"3556442","a":"Chico Buarque & Caetano Veloso","t":"Melhores Momentos De Chico & Caetano","l":"Som Livre","f":"LP","g":"MPB","y":1986,"dc":1980,"p":50,"s":"Na loja","cond":"","obs":"","in":"CB","c":133,"dc_url":"https://www.discogs.com/release/3556442","capa":"capas/3556442.jpg"},{"id":"1891455","a":"Marvin Gaye","t":"A Tribute To The Great Nat King Cole","l":"Tamla","f":"LP","g":"Internacional","y":1965,"dc":1960,"p":110,"s":"Na loja","cond":"","obs":"","in":"MG","c":134,"dc_url":"https://www.discogs.com/release/1891455","capa":"capas/1891455.jpg"},{"id":"4850808","a":"Stevie Wonder","t":"Hotter Than July","l":"Top Tape / Motown","f":"LP · Capa dupla","g":"Internacional","y":1980,"dc":1980,"p":90,"s":"Na loja","cond":"","obs":"","in":"SW","c":135,"dc_url":"https://www.discogs.com/release/4850808","capa":"capas/4850808.jpg"},{"id":"37398507","a":"Criolo, Amaro Freitas & Dino D'Santiago","t":"Criolo, Amaro & Dino","l":"Três Selos / Fábrica Rocinante","f":"LP · Ed. clube · Ed. limitada · Vinil azul","g":"MPB","y":2026,"dc":2020,"p":230,"s":"Na loja","cond":"","obs":"Clube Três Selos 2026, vinil azul","in":"CA","c":136,"dc_url":"https://www.discogs.com/release/37398507","capa":"capas/37398507.jpg"},{"id":"37076028","a":"Gilsons","t":"Eu Vejo Luz Em Maior Proporção Do Que Eu Vejo A Escuridão","l":"Três Selos / Fábrica Rocinante","f":"LP · Ed. clube · Whi","g":"MPB","y":2026,"dc":2020,"p":210,"s":"Na loja","cond":"","obs":"Clube Três Selos 2026, vinil branco","in":"GI","c":137,"dc_url":"https://www.discogs.com/release/37076028","capa":"capas/37076028.jpg"},{"id":"2455476","a":"Tim Maia","t":"Interpreta Clássicos Da Bossa Nova","l":"Vitória Régia Discos","f":"LP","g":"MPB","y":1991,"dc":1990,"p":50,"s":"Na loja","cond":"","obs":"","in":"TM","c":138,"dc_url":"https://www.discogs.com/release/2455476","capa":"capas/2455476.jpg"},{"id":"7294869","a":"Rod Stewart","t":"Greatest Hits","l":"Warner Bros. Records","f":"LP · Coletânea","g":"Internacional","y":1985,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"RS","c":139,"dc_url":"https://www.discogs.com/release/7294869","capa":"capas/7294869.jpg"},{"id":"1696389","a":"Gilberto Gil","t":"Um Banda Um","l":"Warner Bros. Records","f":"LP","g":"MPB","y":1982,"dc":1980,"p":70,"s":"Na loja","cond":"","obs":"","in":"GG","c":140,"dc_url":"https://www.discogs.com/release/1696389","capa":"capas/1696389.jpg"},{"id":"16194864","a":"George Benson","t":"Give Me The Night","l":"Warner Bros. Records","f":"LP · Reedição","g":"Jazz & Instrumental","y":null,"dc":null,"p":70,"s":"Na loja","cond":"","obs":"","in":"GB","c":141,"dc_url":"https://www.discogs.com/release/16194864","capa":"capas/16194864.jpg"},{"id":"2654232","a":"a-ha","t":"Scoundrel Days","l":"Warner Bros. Records","f":"LP","g":"Internacional","y":1987,"dc":1980,"p":70,"s":"Na loja","cond":"","obs":"","in":"HA","c":142,"dc_url":"https://www.discogs.com/release/2654232","capa":"capas/2654232.jpg"},{"id":"381427","a":"R.E.M.","t":"Out Of Time","l":"Warner Bros. Records","f":"LP","g":"Internacional","y":1991,"dc":1990,"p":90,"s":"Na loja","cond":"","obs":"","in":"RM","c":143,"dc_url":"https://www.discogs.com/release/381427","capa":"capas/381427.jpg"},{"id":"1057740","a":"Gilberto Gil","t":"Luar (A Gente Precisa Ver O Luar)","l":"Warner Bros. Records","f":"LP","g":"MPB","y":1981,"dc":1980,"p":70,"s":"Na loja","cond":"","obs":"","in":"GG","c":144,"dc_url":"https://www.discogs.com/release/1057740","capa":"capas/1057740.jpg"},{"id":"2108176","a":"Ultraje A Rigor","t":"Por Quê Ultraje A Rigor?","l":"WEA","f":"LP","g":"Rock & Pop","y":1990,"dc":1990,"p":60,"s":"Na loja","cond":"","obs":"","in":"UR","c":145,"dc_url":"https://www.discogs.com/release/2108176","capa":"capas/2108176.jpg"},{"id":"5356928","a":"Donna Summer","t":"Another Place And Time","l":"WEA / Warner Bros. Records","f":"LP","g":"Internacional","y":1989,"dc":1980,"p":60,"s":"Na loja","cond":"","obs":"","in":"DS","c":146,"dc_url":"https://www.discogs.com/release/5356928","capa":"capas/5356928.jpg"}];
+const COLORS = ["#C8412A","#C98A2B","#2B4F45"];
+const norm = s => (s||"").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"");
+const byId = id => DISCOS.find(x=>String(x.id)===String(id));
+
+/* ---------- selo-disco SVG (fallback / base) ---------- */
+function discSVG(d, size){
+  const c = COLORS[d.c % COLORS.length];
+  let rings="";
+  for(let r=size*0.46; r>size*0.30; r-=size*0.028){
+    rings += `<circle cx="${size/2}" cy="${size/2}" r="${r.toFixed(1)}" fill="none" stroke="#EFE7D6" stroke-opacity="0.10" stroke-width="1"/>`;
+  }
+  return `<svg width="${size}" height="${size}" viewBox="0 0 ${size} ${size}" aria-hidden="true">
+    <rect width="${size}" height="${size}" fill="#1C1814"/>
+    <circle cx="${size/2}" cy="${size/2}" r="${size*0.47}" fill="#141110"/>${rings}
+    <circle cx="${size/2}" cy="${size/2}" r="${size*0.28}" fill="${c}"/>
+    <text x="${size/2}" y="${size/2}" fill="#EFE7D6" font-family="'Space Grotesk',monospace" font-weight="700" font-size="${size*0.24}" text-anchor="middle" dominant-baseline="central">${d.in}</text>
+    <circle cx="${size/2}" cy="${size/2}" r="${size*0.035}" fill="#1C1814"/>
+  </svg>`;
+}
+function coverBox(d, size, cls){
+  const inner = d.capa
+    ? `<img referrerpolicy="no-referrer" loading="lazy" src="${d.capa}" alt="" onerror="coverFail(this)">`
+    : discSVG(d,size);
+  return `<div class="cover ${cls||''}" data-cover-id="${d.id}" data-size="${size}" style="width:${size}px;height:${size}px">${inner}</div>`;
+}
+function coverFail(img){
+  const box=img.parentNode, d=byId(box.getAttribute("data-cover-id")), s=+box.getAttribute("data-size")||62;
+  if(d) box.innerHTML=discSVG(d,s);
+}
+
+/* ---------- capas via iTunes (JSONP, sob demanda) ---------- */
+const artCache = {};              // id -> url | null
+const artSeen = new Set();
+const artQueue = [];
+let artBusy = false;
+function enqueueArt(d, priority){
+  if(!BUSCAR_CAPAS) return;
+  if(d.capa) return;                 // já tem capa do Discogs — não busca iTunes
+  if(d.id in artCache){ if(artCache[d.id]) applyCover(d.id, artCache[d.id]); return; }
+  if(artSeen.has(d.id)) return;
+  artSeen.add(d.id);
+  if(priority) artQueue.unshift(d); else artQueue.push(d);
+  pumpArt();
+}
+function pumpArt(){
+  if(artBusy || !artQueue.length) return;
+  artBusy = true;
+  const d = artQueue.shift();
+  fetchArtwork(d).then(url=>{
+    artCache[d.id] = url || null;
+    if(url) applyCover(d.id, url);
+    setTimeout(()=>{ artBusy=false; pumpArt(); }, 1800);
+  });
+}
+function fetchArtwork(d){
+  return new Promise(res=>{
+    const cb = "itcb_"+String(d.id).replace(/\W/g,"")+"_"+Math.random().toString(36).slice(2,7);
+    let done=false;
+    const clean=()=>{ try{delete window[cb];}catch(e){} const s=document.getElementById(cb); if(s)s.remove(); };
+    window[cb]=(data)=>{ if(done)return; done=true; let url=null;
+      try{ const r=data&&data.results&&data.results[0];
+        if(r&&r.artworkUrl100) url=r.artworkUrl100.replace("100x100bb","300x300bb"); }catch(e){}
+      clean(); res(url);
+    };
+    const term = encodeURIComponent((d.a+" "+d.t).replace(/\(.*?\)/g,"").trim());
+    const s=document.createElement("script"); s.id=cb;
+    s.src=`https://itunes.apple.com/search?term=${term}&entity=album&limit=1&callback=${cb}`;
+    s.onerror=()=>{ if(done)return; done=true; clean(); res(null); };
+    document.head.appendChild(s);
+    setTimeout(()=>{ if(done)return; done=true; clean(); res(null); }, 6500);
+  });
+}
+function applyCover(id, url){
+  document.querySelectorAll(`[data-cover-id="${cssEsc(id)}"]`).forEach(el=>{
+    if(el.dataset.done) return;
+    el.dataset.done="1";
+    const img=new Image(); img.src=url; img.alt="";
+    img.onerror=()=>{ el.removeAttribute("data-done"); };
+    el.innerHTML=""; el.appendChild(img);
+  });
+}
+function cssEsc(v){ return (window.CSS&&CSS.escape)?CSS.escape(String(v)):String(v).replace(/[^\w-]/g,"\\$&"); }
+function hydrateCovers(root, priority){
+  root.querySelectorAll("[data-cover-id]").forEach(el=>{
+    const d=byId(el.dataset.coverId); if(d) enqueueArt(d, priority);
+  });
+}
+/* observer lazy pra lista */
+const io = ("IntersectionObserver" in window) ? new IntersectionObserver((es)=>{
+  es.forEach(e=>{ if(e.isIntersecting){ const d=byId(e.target.dataset.coverId); if(d) enqueueArt(d,false); io.unobserve(e.target); } });
+},{rootMargin:"250px"}) : null;
+
+/* ---------- estado de filtros ---------- */
+const state = { q:"", genre:"", decade:"", price:"", sort:"artist" };
+const GENRES = [...new Set(DISCOS.map(d=>d.g))].sort((a,b)=>a.localeCompare(b,"pt"));
+const DECADES = [...new Set(DISCOS.map(d=>d.dc).filter(Boolean))].sort();
+const PRICES = [
+  {k:"", l:"Qualquer preço"}, {k:"0-70", l:"Até R$ 70"},
+  {k:"70-120", l:"R$ 70–120"}, {k:"120-200", l:"R$ 120–200"}, {k:"200-9999", l:"R$ 200+"},
+];
+const SORTS = [
+  {k:"artist", l:"Artista (A–Z)"}, {k:"year_desc", l:"Ano (mais novo)"}, {k:"year_asc", l:"Ano (mais antigo)"},
+  {k:"price_asc", l:"Preço (menor)"}, {k:"price_desc", l:"Preço (maior)"},
+];
+
+/* ---------- carrinho ---------- */
+let cart = [];  // ids
+const inCart = id => cart.includes(String(id));
+function addToCart(id){ id=String(id); if(!inCart(id)){ cart.push(id); updateCartBadge(); toast("Adicionado ao carrinho"); } }
+function removeFromCart(id){ id=String(id); cart=cart.filter(x=>x!==id); updateCartBadge(); }
+function cartTotal(){ return cart.reduce((s,id)=>{ const d=byId(id); return s+(d?d.p:0); },0); }
+function updateCartBadge(){
+  const n=cart.length, b=document.getElementById("cartBtn");
+  document.getElementById("cartBadge").textContent=n;
+  b.classList.toggle("has", n>0);
+}
+
+/* ---------- render lista ---------- */
+function apply(){
+  let r=DISCOS.slice();
+  if(state.q){ const n=norm(state.q); r=r.filter(d=>norm(d.a+" "+d.t+" "+d.l).includes(n)); }
+  if(state.genre) r=r.filter(d=>d.g===state.genre);
+  if(state.decade) r=r.filter(d=>String(d.dc)===state.decade);
+  if(state.price){ const [lo,hi]=state.price.split("-").map(Number); r=r.filter(d=>d.p>=lo&&d.p<=hi); }
+  const s=state.sort;
+  r.sort((a,b)=>{
+    if(s==="artist") return a.a.localeCompare(b.a,"pt")||(a.y||0)-(b.y||0);
+    if(s==="year_desc") return (b.y||0)-(a.y||0);
+    if(s==="year_asc") return (a.y||9999)-(b.y||9999);
+    if(s==="price_asc") return a.p-b.p;
+    if(s==="price_desc") return b.p-a.p;
+    return 0;
+  });
+  return r;
+}
+function statusPill(st){ const m={"Na loja":"st-loja","Vendido":"st-vendido","Consignado":"st-consignado"}; return `<span class="status ${m[st]||'st-loja'}">${st}</span>`; }
+function esc(s){ return (s||"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c])); }
+
+function render(){
+  const r=apply();
+  document.getElementById("count").textContent = r.length===DISCOS.length ? `${DISCOS.length} discos` : `${r.length} de ${DISCOS.length}`;
+  document.getElementById("moreBtn").classList.toggle("active", !!(state.decade||state.price));
+  const list=document.getElementById("list");
+  if(!r.length){
+    list.innerHTML=`<div class="empty"><div class="big">Nada por aqui</div><div>Nenhum disco com esses filtros.</div><button id="resetAll">Limpar busca e filtros</button></div>`;
+    document.getElementById("resetAll").onclick=resetAll; return;
+  }
+  list.innerHTML = r.map((d,i)=>`
+    <button class="disc" data-id="${d.id}" style="animation-delay:${Math.min(i*14,220)}ms">
+      ${coverBox(d,62)}
+      <div class="info">
+        <div class="artist">${esc(d.a)}</div>
+        <div class="title">${esc(d.t)}</div>
+        <div class="sub">${esc(d.l)}${d.y?" · "+d.y:""}</div>
+      </div>
+      <div class="right">
+        <div class="price">R$ ${d.p}</div>
+        ${inCart(d.id) ? `<span class="incart-tag">✓ no carrinho</span>` : statusPill(d.s)}
+      </div>
+    </button>`).join("");
+  list.querySelectorAll(".disc").forEach(b=>b.onclick=()=>openDetail(b.dataset.id));
+  // capas: observer lazy
+  if(io) list.querySelectorAll(".cover[data-cover-id]").forEach(el=>{ if(!(el.dataset.coverId in artCache)) io.observe(el); else if(artCache[el.dataset.coverId]) applyCover(el.dataset.coverId, artCache[el.dataset.coverId]); });
+  else hydrateCovers(list,false);
+}
+
+/* ---------- detalhe ---------- */
+function openDetail(id){
+  const d=byId(id); if(!d) return;
+  const query=encodeURIComponent(d.a+" "+d.t);
+  const playURL = PLAYER==="spotify" ? `https://open.spotify.com/search/${query}` : `https://www.youtube.com/results?search_query=${query}`;
+  const waText=encodeURIComponent(`Olá! Quero ser avisado quando este disco estiver disponível na SULCO:\n\n${d.a} — ${d.t}${d.y?" ("+d.y+")":""}`);
+  const waURL=`https://wa.me/${SULCO_WHATSAPP}?text=${waText}`;
+  const specs=[["Selo",d.l],["Ano",d.y||"—"],["Formato",d.f],["Gênero",d.g],d.cond?["Estado",d.cond]:null,["Situação",d.s]].filter(Boolean);
+  const sold = d.s==="Vendido";
+  let cartBtn;
+  if(sold) cartBtn=`<button class="sold">Indisponível</button>`;
+  else if(inCart(d.id)) cartBtn=`<button class="incart" data-act="rm" data-id="${d.id}"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="20 6 9 17 4 12"/></svg> No carrinho — remover</button>`;
+  else cartBtn=`<button data-act="add" data-id="${d.id}"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9"><path d="M5 7h14l-1 13H6L5 7z"/><path d="M9 7V5.5a3 3 0 0 1 6 0V7"/></svg> Adicionar ao carrinho · R$ ${d.p}</button>`;
+
+  const sheet=document.getElementById("detailSheet");
+  sheet.innerHTML=`
+    <div class="grab"></div>
+    <div class="detail-hero">
+      <svg class="arcs2" viewBox="0 0 100 100" aria-hidden="true"><g fill="none" stroke="#EFE7D6" stroke-width="1.4"><circle cx="50" cy="50" r="16"/><circle cx="50" cy="50" r="27"/><circle cx="50" cy="50" r="38"/><circle cx="50" cy="50" r="49"/></g></svg>
+      <button class="x" id="dClose" aria-label="Fechar" style="position:absolute; right:14px; top:14px; color:var(--bone-70); font-size:26px; z-index:2">×</button>
+      ${coverBox(d,150,'detail-cover')}
+      <div class="d-artist">${esc(d.a)}</div>
+      <div class="d-title">${esc(d.t)}</div>
+    </div>
+    <div class="detail-body">
+      ${specs.map(([k,v])=>`<div class="spec"><span class="k">${k}</span><span class="v">${esc(String(v))}</span></div>`).join("")}
+      ${d.obs?`<div class="d-note"><b>Sobre esta cópia</b>${esc(d.obs)}</div>`:""}
+      <div class="d-price-row"><span class="d-price">R$ ${d.p}</span>${statusPill(d.s)}</div>
+    </div>
+    <div class="d-cart">${cartBtn}</div>
+    <div class="d-actions">
+      <a class="a-play" href="${playURL}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Ouvir</a>
+      <a class="a-notify" href="${waURL}" target="_blank" rel="noopener"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10.5 21a1.5 1.5 0 0 0 3 0"/></svg> Me avise</a>
+    </div>
+    <a class="d-discogs" href="${d.dc_url}" target="_blank" rel="noopener">Ver ficha no Discogs ↗</a>`;
+  document.getElementById("dClose").onclick=closeDetail;
+  const cb=sheet.querySelector(".d-cart button[data-act]");
+  if(cb) cb.onclick=()=>{ const id=cb.dataset.id; if(cb.dataset.act==="add") addToCart(id); else removeFromCart(id); openDetail(id); render(); };
+  hydrateCovers(sheet, true);
+  openSheet("detailSheet","scrim2");
+}
+
+/* ---------- carrinho (sheet) ---------- */
+function openCart(){ renderCart(); openSheet("cartSheet","scrim3"); }
+function renderCart(){
+  const sheet=document.getElementById("cartSheet");
+  const items=cart.map(byId).filter(Boolean);
+  let inner;
+  if(!items.length){
+    inner=`<div class="cart-empty"><div class="big">Carrinho vazio</div><div>Toque em um disco e adicione ao carrinho pra montar seu pedido.</div></div>`;
+  } else {
+    inner=`<div id="cartItems">${items.map(d=>`
+      <div class="cart-item" data-id="${d.id}">
+        ${coverBox(d,48)}
+        <div class="ci-info"><div class="ci-artist">${esc(d.a)}</div><div class="ci-title">${esc(d.t)}${d.y?" · "+d.y:""}</div></div>
+        <div class="ci-right"><div class="ci-price">R$ ${d.p}</div><button class="ci-rm" data-id="${d.id}">remover</button></div>
+      </div>`).join("")}</div>
+      <div class="cart-foot">
+        <div class="cart-total"><span class="lbl">Total · ${items.length} ${items.length===1?"disco":"discos"}</span><span class="val">R$ ${cartTotal()}</span></div>
+        <button class="cart-checkout" id="checkoutBtn"><svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M6 8a6 6 0 0 1 12 0c0 7 3 7 3 7H3s3 0 3-7"/><path d="M10.5 21a1.5 1.5 0 0 0 3 0"/></svg> Fechar pedido pelo WhatsApp</button>
+        <div class="cart-hint">Você pode enviar pelo WhatsApp ou mostrar esta tela a um atendente pra retirar no balcão.</div>
+      </div>`;
+  }
+  sheet.innerHTML=`<div class="grab"></div>
+    <div class="sheet-head"><h2>Seu carrinho</h2><button class="x" id="cClose" aria-label="Fechar">×</button></div>${inner}`;
+  document.getElementById("cClose").onclick=closeCart;
+  sheet.querySelectorAll(".ci-rm").forEach(b=>b.onclick=()=>{ removeFromCart(b.dataset.id); renderCart(); render(); });
+  const ck=document.getElementById("checkoutBtn"); if(ck) ck.onclick=checkout;
+  hydrateCovers(sheet, true);
+}
+function checkout(){
+  const items=cart.map(byId).filter(Boolean);
+  if(!items.length) return;
+  const lines=items.map(d=>`• ${d.a} — ${d.t}${d.y?" ("+d.y+")":""}  ·  R$ ${d.p}`).join("\n");
+  const msg=`Olá! Quero fechar este pedido na SULCO:\n\n${lines}\n\nTotal: R$ ${cartTotal()} (${items.length} ${items.length===1?"disco":"discos"})`;
+  window.open(`https://wa.me/${SULCO_WHATSAPP}?text=${encodeURIComponent(msg)}`, "_blank", "noopener");
+}
+
+/* ---------- sheets util ---------- */
+function openSheet(id,scr){ document.getElementById(scr).classList.add("open"); requestAnimationFrame(()=>document.getElementById(id).classList.add("open")); document.body.style.overflow="hidden"; }
+function closeSheet(id,scr){ document.getElementById(id).classList.remove("open"); document.getElementById(scr).classList.remove("open"); document.body.style.overflow=""; }
+function closeDetail(){ closeSheet("detailSheet","scrim2"); }
+function closeCart(){ closeSheet("cartSheet","scrim3"); }
+function openFilters(){ buildSheetChips(); openSheet("filterSheet","scrim"); }
+function closeFilters(){ closeSheet("filterSheet","scrim"); }
+
+/* ---------- chips ---------- */
+function buildGenreChips(){
+  const box=document.getElementById("genrechips");
+  const mk=(k,l)=>`<button class="chip" aria-pressed="${state.genre===k}" data-g="${k}">${l}</button>`;
+  box.innerHTML=mk("","Todos")+GENRES.map(g=>mk(g,g)).join("");
+  box.querySelectorAll(".chip").forEach(b=>b.onclick=()=>{ state.genre=b.dataset.g; buildGenreChips(); render(); });
+}
+function buildSheetChips(){
+  const s=document.getElementById("sortchips");
+  s.innerHTML=SORTS.map(o=>`<button class="fchip" aria-pressed="${state.sort===o.k}" data-k="${o.k}">${o.l}</button>`).join("");
+  s.querySelectorAll(".fchip").forEach(b=>b.onclick=()=>{ state.sort=b.dataset.k; buildSheetChips(); });
+  const d=document.getElementById("decadechips");
+  const mkd=(k,l)=>`<button class="fchip" aria-pressed="${state.decade===k}" data-k="${k}">${l}</button>`;
+  d.innerHTML=mkd("","Todas")+DECADES.map(x=>mkd(String(x),x+"s")).join("");
+  d.querySelectorAll(".fchip").forEach(b=>b.onclick=()=>{ state.decade=b.dataset.k; buildSheetChips(); });
+  const p=document.getElementById("pricechips");
+  p.innerHTML=PRICES.map(o=>`<button class="fchip" aria-pressed="${state.price===o.k}" data-k="${o.k}">${o.l}</button>`).join("");
+  p.querySelectorAll(".fchip").forEach(b=>b.onclick=()=>{ state.price=b.dataset.k; buildSheetChips(); });
+}
+function resetAll(){
+  state.q=""; state.genre=""; state.decade=""; state.price=""; state.sort="artist";
+  document.getElementById("q").value=""; document.getElementById("searchwrap").classList.remove("has");
+  buildGenreChips(); render();
+}
+
+/* ---------- toast ---------- */
+let toastT;
+function toast(msg){
+  const t=document.getElementById("toast");
+  t.innerHTML=`<svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4"><polyline points="20 6 9 17 4 12"/></svg>${msg}`;
+  t.classList.add("show"); clearTimeout(toastT); toastT=setTimeout(()=>t.classList.remove("show"),1600);
+}
+
+/* ---------- eventos ---------- */
+const qEl=document.getElementById("q"), sw=document.getElementById("searchwrap");
+qEl.addEventListener("input", e=>{ state.q=e.target.value; sw.classList.toggle("has", !!e.target.value); render(); });
+document.getElementById("clr").onclick=()=>{ qEl.value=""; state.q=""; sw.classList.remove("has"); qEl.focus(); render(); };
+document.getElementById("moreBtn").onclick=openFilters;
+document.getElementById("fClose").onclick=closeFilters;
+document.getElementById("fApply").onclick=()=>{ closeFilters(); render(); };
+document.getElementById("fClear").onclick=()=>{ state.decade=""; state.price=""; state.sort="artist"; buildSheetChips(); };
+document.getElementById("cartBtn").onclick=openCart;
+document.getElementById("scrim").onclick=closeFilters;
+document.getElementById("scrim2").onclick=closeDetail;
+document.getElementById("scrim3").onclick=closeCart;
+document.addEventListener("keydown", e=>{ if(e.key==="Escape"){ closeFilters(); closeDetail(); closeCart(); } });
+
+/* qr screen -> welcome (simula o escaneamento) */
+document.getElementById("qrTap").onclick=()=>{
+  document.getElementById("qrscreen").classList.add("hide");
+};
+
+/* welcome */
+document.getElementById("enterBtn").onclick=()=>{
+  document.getElementById("welcome").classList.add("hide");
+  render(); // dispara observer/capas só depois de entrar
+};
+
+/* ---------- init ---------- */
+buildGenreChips();
+updateCartBadge();
+render();
+</script>
+</body>
+</html>
